@@ -1,0 +1,19 @@
+{
+  "name": "nincord-weekly",
+  "version": "1.0.0",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^11.5.1",
+    "typescript": "^3.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^12.0.10",
+    "nodemon": "^1.19.1",
+    "ts-node": "^8.3.0"
+  },
+  "scripts": {
+    "start": "node_modules/.bin/ts-node --files ./src/index.ts",
+    "dev": "nodemon"
+  }
+}
