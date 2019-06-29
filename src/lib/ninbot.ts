@@ -7,6 +7,7 @@ import {
   Collection
 } from "discord.js";
 import * as moment from "moment";
+import Spotify from "./spotify";
 
 require("dotenv").config();
 
@@ -18,9 +19,6 @@ export default class Ninbot {
 
   constructor() {
     this.client = new Client();
-    this.client.on("ready", () => {
-      console.log("HEAD LIKE A HOLE\nI'M READY TO ROLL");
-    });
   }
 
   /**
@@ -31,7 +29,11 @@ export default class Ninbot {
     this.guild = this.client.guilds.find(
       guild => guild.id === process.env.DISCORD_GUILD_ID
     );
-    console.log(`Logged in successfully to "${this.guild.name}"`);
+    console.log(
+      `Logged in to Discord and connected to ${this.guild.name} (#${
+        this.guild.id
+      })`
+    );
   }
 
   /**
@@ -82,11 +84,11 @@ export default class Ninbot {
   }
 
   /**
-   * Generate a playlist
+   * Generate a Spotify playlist
    */
-  public async generatePlaylist(channelName = "i-made-this") {
+  public async generatePlaylist(spotify: Spotify) {
     const channel = this.guild.channels.find(
-      channel => channel.name === channelName && channel.type === "text"
+      channel => channel.name === "i-made-this" && channel.type === "text"
     ) as TextChannel;
     if (!channel) {
       return;
@@ -97,7 +99,6 @@ export default class Ninbot {
       .subtract(1, "week")
       .startOf("day");
     const messages = await this.fetchMessages(channel, targetDate);
-    console.log(`${messages.size} message(s) found in channel`);
 
     // Filter the messages to those that contain Spotify links
     let spotifyUrls = [];
@@ -110,7 +111,9 @@ export default class Ninbot {
       }
     });
 
-    console.log(`${spotifyUrls.length} Spotify tracks were detected`);
-    console.log(spotifyUrls);
+    console.log(
+      `${spotifyUrls.length} Spotify tracks were detected`,
+      spotifyUrls
+    );
   }
 }
