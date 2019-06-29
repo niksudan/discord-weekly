@@ -2,4 +2,4 @@
 
 ## Features
 
-- Retrieves the last week's worth of songs in `#i-made-this` and create a Spotify playlist from the results.
+- Retrieves the last week's worth of songs in `#non-nin-music` and create a Spotify playlist from the results.

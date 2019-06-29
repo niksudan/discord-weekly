@@ -88,7 +88,7 @@ export default class Ninbot {
    */
   public async generatePlaylist(spotify: Spotify) {
     const channel = this.guild.channels.find(
-      channel => channel.name === "i-made-this" && channel.type === "text"
+      channel => channel.name === "non-nin-music" && channel.type === "text"
     ) as TextChannel;
     if (!channel) {
       return;
