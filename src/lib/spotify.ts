@@ -6,6 +6,8 @@ require("dotenv").config();
 
 export default class Spotify {
   client: SpotifyWebApi;
+  id?: string;
+  name?: string;
 
   constructor() {
     this.client = new SpotifyWebApi({
@@ -57,15 +59,27 @@ export default class Spotify {
   public async login(code: string) {
     const response = await this.client.authorizationCodeGrant(code);
     this.setTokens(response.body.access_token, response.body.refresh_token);
+    await this.getAccountDetails();
   }
 
   public async refreshTokens() {
     const response = await this.client.refreshAccessToken();
     this.setTokens(response.body.access_token, response.body.refresh_token);
+    await this.getAccountDetails();
   }
 
-  public async getAccountName() {
+  private async getAccountDetails() {
     const response = await this.client.getMe();
-    return `${response.body.display_name} (#${response.body.id})`;
+    this.id = response.body.id;
+    this.name = response.body.display_name;
+  }
+
+  public get accountName() {
+    return `${this.name} (#${this.id})`;
+  }
+
+  public async createPlaylist(name: string) {
+    const response = await this.client.createPlaylist(this.id, name);
+    return response.body;
   }
 }
