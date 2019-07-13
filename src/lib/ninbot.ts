@@ -25,6 +25,7 @@ export default class Ninbot {
    * Initiate year zero
    */
   public async login() {
+    console.log("Logging in...");
     await this.client.login(process.env.DISCORD_TOKEN);
     this.guild = this.client.guilds.find(
       guild => guild.id === process.env.DISCORD_GUILD_ID
@@ -43,50 +44,46 @@ export default class Ninbot {
     channel: TextChannel,
     targetDate: moment.Moment,
     currentMessages: Messages = new Collection<string, Message>(),
-    beforeDate?: Date
+    beforeDate?: moment.Moment
   ): Promise<Messages> {
+    console.log("Fetching messages...");
     let options = {};
-
-    // Fetch dates for the specified period
     if (beforeDate) {
-      options = { before: SnowflakeUtil.generate(beforeDate) };
+      options = {
+        before: SnowflakeUtil.generate(
+          beforeDate.subtract(1, "second").toDate()
+        )
+      };
     }
     const newMessages = await channel.fetchMessages(options);
 
-    // If there are no new messages, return what we have
+    // If the payload is empty, there are no more messages left in the channel
     if (newMessages.size === 0) {
+      console.log("No more messages to fetch in channel");
       return currentMessages;
     }
 
-    // If we fetched the same messages as last time, return what we have
-    if (
-      currentMessages.size > 0 &&
-      newMessages.last().id === currentMessages.last().id
-    ) {
-      return currentMessages;
-    }
-
-    // If we've passed the target date, return the new messages
-    const messages = currentMessages.concat(newMessages);
-    const lastMessageDate = moment(newMessages.last().createdAt);
-    if (lastMessageDate.isBefore(targetDate)) {
-      console.log("No more new messages before the target date");
-      return messages;
-    }
-
-    // Fetch more dates if necessary
-    return this.fetchMessages(
-      channel,
-      targetDate,
-      messages,
-      lastMessageDate.toDate()
+    // We're only interested in getting the messages before the target date
+    const messagesToAdd = newMessages.filter(message =>
+      moment(message.createdAt).isSameOrAfter(targetDate)
     );
+    const messages = currentMessages.concat(messagesToAdd);
+
+    // If all messages were after the target date, fetch for more
+    if (messagesToAdd.size === 50) {
+      const lastMessageDate = moment(messagesToAdd.last().createdAt);
+      return this.fetchMessages(channel, targetDate, messages, lastMessageDate);
+    }
+
+    console.log(`No more messages to fetch after ${targetDate.toString()}`);
+    return messages;
   }
 
   /**
    * Generate a Spotify playlist
    */
   public async generatePlaylist(spotify: Spotify) {
+    console.log("Generating playlist...");
     const channel = this.guild.channels.find(
       channel => channel.name === "non-nin-music" && channel.type === "text"
     ) as TextChannel;
@@ -99,6 +96,10 @@ export default class Ninbot {
       .subtract(1, "week")
       .startOf("day");
     const messages = await this.fetchMessages(channel, targetDate);
+    console.log(`${messages.size} message(s) in total were fetched`);
+    if (messages.size === 0) {
+      return;
+    }
 
     // Filter the messages to those that contain Spotify links
     let spotifyUrls = [];
@@ -112,7 +113,7 @@ export default class Ninbot {
     });
 
     console.log(
-      `${spotifyUrls.length} Spotify tracks were detected`,
+      `${spotifyUrls.length} Spotify track(s) were detected`,
       spotifyUrls
     );
   }
