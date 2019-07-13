@@ -14,8 +14,9 @@ import Spotify from "./lib/spotify";
     const ninbot = new Ninbot();
     await ninbot.login();
     await ninbot.generatePlaylist(spotify);
+    process.exit(0);
   } catch (e) {
-    console.log(`ERROR: ${e.message}`);
+    console.log(e);
     process.exit(1);
   }
 })();

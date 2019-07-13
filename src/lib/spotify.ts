@@ -96,7 +96,9 @@ export default class Spotify {
     const response = await this.client.getPlaylistTracks(
       process.env.PLAYLIST_ID
     );
-    const tracks = response.body.items.map(item => item.track);
+    const tracks = response.body.items.map(item => ({
+      uri: item.track.uri
+    }));
     return this.client.removeTracksFromPlaylist(
       process.env.PLAYLIST_ID,
       tracks
