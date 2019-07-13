@@ -45,6 +45,10 @@ export default class Spotify {
     );
   }
 
+  public get accountName() {
+    return `${this.name} (#${this.id})`;
+  }
+
   private setTokens(accessToken, refreshToken) {
     this.client.setAccessToken(accessToken);
     if (refreshToken) {
@@ -66,6 +70,7 @@ export default class Spotify {
     const response = await this.client.refreshAccessToken();
     this.setTokens(response.body.access_token, response.body.refresh_token);
     await this.getAccountDetails();
+    console.log("Logged in to Spotify as", this.accountName);
   }
 
   private async getAccountDetails() {
@@ -74,12 +79,27 @@ export default class Spotify {
     this.name = response.body.display_name;
   }
 
-  public get accountName() {
-    return `${this.name} (#${this.id})`;
+  public async renamePlaylist(name: string) {
+    console.log(`Renaming playlist to \"${name}\"...`);
+    await this.client.changePlaylistDetails(process.env.PLAYLIST_ID, {
+      name
+    });
   }
 
-  public async createPlaylist(name: string) {
-    const response = await this.client.createPlaylist(this.id, name);
-    return response.body;
+  public async addTracksToPlaylist(tracks: string[]) {
+    console.log("Adding tracks to playlist...");
+    return this.client.addTracksToPlaylist(process.env.PLAYLIST_ID, tracks);
+  }
+
+  public async clearPlaylist() {
+    console.log("Clearing playlist...");
+    const response = await this.client.getPlaylistTracks(
+      process.env.PLAYLIST_ID
+    );
+    const tracks = response.body.items.map(item => item.track);
+    return this.client.removeTracksFromPlaylist(
+      process.env.PLAYLIST_ID,
+      tracks
+    );
   }
 }

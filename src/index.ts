@@ -10,7 +10,6 @@ import Spotify from "./lib/spotify";
       console.log("WARNING: Spotify features won't work until you log in");
     } else {
       await spotify.refreshTokens();
-      console.log("Logged in to Spotify as", await spotify.accountName);
     }
     const ninbot = new Ninbot();
     await ninbot.login();
