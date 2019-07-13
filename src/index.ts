@@ -3,6 +3,11 @@ import Server from "./lib/server";
 import Spotify from "./lib/spotify";
 
 (async () => {
+  setTimeout(() => {
+    console.log("Took too long, exiting");
+    process.exit(1);
+  }, 1000 * 30);
+
   try {
     const spotify = new Spotify();
     new Server(spotify);
