@@ -1,6 +1,13 @@
 import Ninbot from "./lib/ninbot";
 import Server from "./lib/server";
 import Spotify from "./lib/spotify";
+import * as Sentry from "@sentry/node";
+
+require("dotenv").config();
+
+if (process.env.SENTRY_DSN) {
+  Sentry.init({ dsn: process.env.SENTRY_DSN });
+}
 
 (async () => {
   setTimeout(() => {
@@ -18,10 +25,11 @@ import Spotify from "./lib/spotify";
     }
     const ninbot = new Ninbot();
     await ninbot.login();
-    await ninbot.generatePlaylist(spotify);
+    await ninbot.generatePlaylist(spotify, 0);
     process.exit(0);
   } catch (e) {
     console.log(e);
+    Sentry.captureException(e);
     process.exit(1);
   }
 })();
