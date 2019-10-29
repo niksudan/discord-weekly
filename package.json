@@ -20,7 +20,7 @@
     "ts-node": "^8.3.0"
   },
   "scripts": {
-    "start": "node_modules/.bin/ts-node --files ./src/index.ts",
+    "generate-playlist": "node_modules/.bin/ts-node --files ./src/generate-playlist.ts",
     "dev": "nodemon"
   }
 }

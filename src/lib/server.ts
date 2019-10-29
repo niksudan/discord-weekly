@@ -1,6 +1,6 @@
-import * as express from "express";
-import * as bodyParser from "body-parser";
-import Spotify from "./spotify";
+import * as express from 'express';
+import * as bodyParser from 'body-parser';
+import Spotify from './spotify';
 
 export default class Server {
   constructor(spotify: Spotify) {
@@ -8,7 +8,7 @@ export default class Server {
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({ extended: true }));
 
-    app.get("/", async (req, res) => {
+    app.get('/', async (req, res) => {
       if (spotify.isAuthenticated) {
         await spotify.refreshTokens();
         res.sendStatus(200);
@@ -16,7 +16,7 @@ export default class Server {
       res.redirect(spotify.authorizationUrl);
     });
 
-    app.get("/callback", async (req, res) => {
+    app.get('/callback', async (req, res) => {
       if (spotify.isAuthenticated) {
         await spotify.refreshTokens();
         res.sendStatus(200);
@@ -29,10 +29,10 @@ export default class Server {
       }
     });
 
-    app.set("port", process.env.SERVER_PORT || 9000);
-    app.listen(app.get("port"), () => {
+    app.set('port', process.env.SERVER_PORT || 9000);
+    app.listen(app.get('port'), () => {
       console.log(
-        `Spotify auth server is live at http://localhost:${app.get("port")}`
+        `Spotify auth server is live at http://localhost:${app.get('port')}`,
       );
     });
   }

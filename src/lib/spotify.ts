@@ -1,8 +1,8 @@
-import * as SpotifyWebApi from "spotify-web-api-node";
-import * as fs from "fs";
-import * as path from "path";
+import * as SpotifyWebApi from 'spotify-web-api-node';
+import * as fs from 'fs';
+import * as path from 'path';
 
-require("dotenv").config();
+require('dotenv').config();
 
 export default class Spotify {
   client: SpotifyWebApi;
@@ -13,12 +13,12 @@ export default class Spotify {
     this.client = new SpotifyWebApi({
       clientId: process.env.SPOTIFY_CLIENT_ID,
       clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-      redirectUri: process.env.SPOTIFY_REDIRECT_URI
+      redirectUri: process.env.SPOTIFY_REDIRECT_URI,
     });
   }
 
   private get authTokenFilepath() {
-    return path.join(__dirname, "/../../spotify-auth-tokens.txt");
+    return path.join(__dirname, '/../../spotify-auth-tokens.txt');
   }
 
   public get isAuthenticated() {
@@ -28,9 +28,9 @@ export default class Spotify {
     try {
       const tokens = fs
         .readFileSync(this.authTokenFilepath, {
-          encoding: "utf8"
+          encoding: 'utf8',
         })
-        .split("\n");
+        .split('\n');
       this.setTokens(tokens[0], tokens[1]);
       return !!this.client.getAccessToken();
     } catch (e) {
@@ -40,8 +40,8 @@ export default class Spotify {
 
   public get authorizationUrl() {
     return this.client.createAuthorizeURL(
-      ["playlist-modify-public", "playlist-modify-private"],
-      new Date().getTime().toString()
+      ['playlist-modify-public', 'playlist-modify-private'],
+      new Date().getTime().toString(),
     );
   }
 
@@ -56,7 +56,7 @@ export default class Spotify {
     }
     fs.writeFileSync(
       this.authTokenFilepath,
-      `${accessToken}\n${refreshToken || this.client.getRefreshToken()}`
+      `${accessToken}\n${refreshToken || this.client.getRefreshToken()}`,
     );
   }
 
@@ -70,7 +70,7 @@ export default class Spotify {
     const response = await this.client.refreshAccessToken();
     this.setTokens(response.body.access_token, response.body.refresh_token);
     await this.getAccountDetails();
-    console.log("Logged in to Spotify as", this.accountName);
+    console.log('Logged in to Spotify as', this.accountName);
   }
 
   private async getAccountDetails() {
@@ -82,26 +82,26 @@ export default class Spotify {
   public async renamePlaylist(name: string) {
     console.log(`Renaming playlist to \"${name}\"...`);
     await this.client.changePlaylistDetails(process.env.PLAYLIST_ID, {
-      name
+      name,
     });
   }
 
   public async addTracksToPlaylist(tracks: string[]) {
-    console.log("Adding tracks to playlist...");
+    console.log('Adding tracks to playlist...');
     return this.client.addTracksToPlaylist(process.env.PLAYLIST_ID, tracks);
   }
 
   public async clearPlaylist() {
-    console.log("Clearing playlist...");
+    console.log('Clearing playlist...');
     const response = await this.client.getPlaylistTracks(
-      process.env.PLAYLIST_ID
+      process.env.PLAYLIST_ID,
     );
     const tracks = response.body.items.map(item => ({
-      uri: item.track.uri
+      uri: item.track.uri,
     }));
     return this.client.removeTracksFromPlaylist(
       process.env.PLAYLIST_ID,
-      tracks
+      tracks,
     );
   }
 }
