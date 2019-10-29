@@ -8,6 +8,7 @@ ninbot retrieves the last week's worth of songs in `#non-nin-music` and then upd
 
 Your song will be added to the playlist if it is in one of the following formats:
 
-- Spotify track (https://open.spotify.com/track/...)
+- Spotify track (ninbot ignores album links for now)
+- YouTube video (ninbot will try it's best to match)
 
 The playlist updates every Monday at 00:00 UTC.

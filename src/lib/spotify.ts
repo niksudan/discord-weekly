@@ -113,18 +113,17 @@ export default class Spotify {
     );
   }
 
-  public async searchTracks(
-    query: string,
-    limit = 10,
-  ): Promise<SpotifyTrack[]> {
-    console.log(`Searching for tracks about "${query}"...`);
+  public async searchTracks(query: string, limit = 5): Promise<SpotifyTrack[]> {
+    console.log(`Searching tracks for "${query}"...`);
     const response = await this.client.searchTracks(query, { limit });
     return response.body.tracks.items.map(item => ({
       uri: item.uri,
       name: item.name,
       popularity: item.popularity,
       album: item.album.name,
-      artists: item.artists.map(artist => artist.name),
+      artists: item.artists.map(artist => ({
+        name: artist.name,
+      })),
     }));
   }
 }

@@ -7,7 +7,10 @@ import {
   Collection,
 } from 'discord.js';
 import * as moment from 'moment';
+import * as Fuse from 'fuse.js';
+
 import Spotify from './spotify';
+import YouTube from './youtube';
 
 require('dotenv').config();
 
@@ -106,36 +109,104 @@ export default class Ninbot {
     const messages = await this.fetchMessages(channel, fromDate, toDate);
     console.log(
       `${messages.size} message(s) were fetched in total`,
-      messages.map(message => message.content),
+      // messages.map(message => message.content),
     );
 
-    // Filter the messages to those that contain Spotify links
-    let spotifyUrls: string[] = [];
+    let items: {
+      url: string;
+      service: 'spotify' | 'youtube';
+    }[] = [];
+
+    // Filter for messages to those that contain valid links
     messages.forEach(message => {
-      const match = message.content.match(
+      const spotifyMatch = message.content.match(
         /https:\/\/open.spotify.com\/track\/([^? ]+)/gi,
       );
-      if (match) {
-        spotifyUrls = spotifyUrls.concat(
-          match.map(
-            url =>
-              `spotify:track:${url.replace(
-                /https:\/\/open.spotify.com\/track\//gi,
-                '',
-              )}`,
-          ),
+      if (spotifyMatch) {
+        items = items.concat(
+          spotifyMatch.map(url => ({
+            url,
+            service: 'spotify',
+          })),
+        );
+      }
+
+      const youtubeMatch = message.content.match(
+        /^(http(s)?:\/\/)?((w){3}.)?youtu(be|.be)?(\.com)?\/.+/gi,
+      );
+      if (youtubeMatch) {
+        items = items.concat(
+          youtubeMatch.map(url => ({
+            url,
+            service: 'youtube',
+          })),
         );
       }
     });
 
+    // Convert the submissions into Spotify URIs if possible
+    const tracks: string[] = [];
+    let spotifyTrackCount = 0;
+    let youtubeTrackCount = 0;
+
+    for (let item of items) {
+      switch (item.service) {
+        case 'spotify':
+          spotifyTrackCount += 1;
+          tracks.push(
+            `spotify:track:${item.url.replace(
+              /https:\/\/open.spotify.com\/track\//gi,
+              '',
+            )}`,
+          );
+          break;
+
+        case 'youtube':
+          const video = await YouTube.getVideo(item.url);
+          if (!video) {
+            break;
+          }
+
+          const formattedTitle = video.title
+            .replace(/ *\([^)]*\) */g, '')
+            .replace(/[^A-Za-z0-9 ]/g, '')
+            .replace(/\s{2,}/g, ' ');
+
+          const fuse = new Fuse(await spotify.searchTracks(formattedTitle), {
+            threshold: 0.8,
+            keys: [
+              {
+                name: 'title',
+                weight: 0.7,
+              },
+              {
+                name: 'artists.name',
+                weight: 0.5,
+              },
+              {
+                name: 'album',
+                weight: 0.1,
+              },
+            ],
+          });
+
+          const fuzzyResults = fuse.search(video.title);
+          if (fuzzyResults.length) {
+            youtubeTrackCount += 1;
+            tracks.push(fuzzyResults[0].uri);
+          }
+          break;
+      }
+    }
+
     console.log(
-      `${spotifyUrls.length} Spotify track(s) were detected`,
-      spotifyUrls,
+      `${tracks.length} track(s) found (Spotify: ${spotifyTrackCount}. YouTube: ${youtubeTrackCount}`,
+      tracks,
     );
 
     // Update the playlist with the tracks
-    if (spotifyUrls.length) {
-      await spotify.addTracksToPlaylist(spotifyUrls.reverse());
+    if (tracks.length) {
+      await spotify.addTracksToPlaylist(tracks.reverse());
     }
 
     console.log(
