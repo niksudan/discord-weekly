@@ -27,7 +27,7 @@ if (process.env.SENTRY_DSN) {
 
     const ninbot = new Ninbot();
     await ninbot.login();
-    await ninbot.generatePlaylist(spotify, 0);
+    await ninbot.generatePlaylist(spotify, 1);
     process.exit(0);
   } catch (e) {
     console.log(e);
