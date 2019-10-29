@@ -4,6 +4,14 @@ import * as path from 'path';
 
 require('dotenv').config();
 
+interface SpotifyTrack {
+  uri: string;
+  name: string;
+  popularity: number;
+  album: string;
+  artists: string[];
+}
+
 export default class Spotify {
   client: SpotifyWebApi;
   id?: string;
@@ -103,5 +111,20 @@ export default class Spotify {
       process.env.PLAYLIST_ID,
       tracks,
     );
+  }
+
+  public async searchTracks(
+    query: string,
+    limit = 10,
+  ): Promise<SpotifyTrack[]> {
+    console.log(`Searching for tracks about "${query}"...`);
+    const response = await this.client.searchTracks(query, { limit });
+    return response.body.tracks.items.map(item => ({
+      uri: item.uri,
+      name: item.name,
+      popularity: item.popularity,
+      album: item.album.name,
+      artists: item.artists.map(artist => artist.name),
+    }));
   }
 }
