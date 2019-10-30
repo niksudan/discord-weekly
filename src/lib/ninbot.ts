@@ -132,7 +132,7 @@ export default class Ninbot {
       }
 
       const youtubeMatch = message.content.match(
-        /^(http(s)?:\/\/)?((w){3}.)?youtu(be|.be)?(\.com)?\/.+/gi,
+        /http(s)?:\/\/((w){3}.)?youtu(be|.be)?(\.com)?\/([^\s]+)/gi,
       );
       if (youtubeMatch) {
         items = items.concat(
