@@ -20,6 +20,10 @@ export default class YouTube {
 
     const query = queryString.parse(response);
     const { videoDetails } = JSON.parse(query.player_response.toString());
+    
+    if (!videoDetails) {
+      return;
+    }
 
     return {
       id: videoDetails.videoId,
