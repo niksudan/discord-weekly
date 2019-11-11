@@ -9,25 +9,19 @@ interface YouTubeVideo {
 
 export default class YouTube {
   public static async getVideo(url: string): Promise<YouTubeVideo> {
-    const id = getYouTubeID(url);
-    if (!id) {
-      return;
+    try {
+      const id = getYouTubeID(url);
+      const response = await fetch(
+        `http://youtube.com/get_video_info?html5=1&video_id=${id}`,
+      ).then(res => res.text());
+      const query = queryString.parse(response);
+      const { videoDetails } = JSON.parse(query.player_response.toString());
+      return {
+        id: videoDetails.videoId,
+        title: videoDetails.title,
+      };
+    } catch (e) {
+      return; 
     }
-
-    const response = await fetch(
-      `http://youtube.com/get_video_info?html5=1&video_id=${id}`,
-    ).then(res => res.text());
-
-    const query = queryString.parse(response);
-    const { videoDetails } = JSON.parse(query.player_response.toString());
-    
-    if (!videoDetails) {
-      return;
-    }
-
-    return {
-      id: videoDetails.videoId,
-      title: videoDetails.title,
-    };
   }
 }
