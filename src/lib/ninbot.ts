@@ -120,7 +120,7 @@ export default class Ninbot {
     // Filter for messages to those that contain valid links
     messages.forEach(message => {
       const spotifyMatch = message.content.match(
-        /https:\/\/open.spotify.com\/track\/([^? ]+)/gi,
+        /https:\/\/open.spotify.com\/track\/(\w+)/gi,
       );
       if (spotifyMatch) {
         items = items.concat(
