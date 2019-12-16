@@ -82,7 +82,11 @@ export default class Ninbot {
   /**
    * Generate a Spotify playlist
    */
-  public async generatePlaylist(spotify: Spotify, weeksAgo = 1) {
+  public async generatePlaylist(
+    spotify: Spotify,
+    weeksAgo = 1,
+    savePlaylist = true,
+  ) {
     console.log(`Generating playlist from ${weeksAgo} week(s) ago...`);
     const channel = this.guild.channels.find(
       channel => channel.name === 'non-nin-music' && channel.type === 'text',
@@ -98,12 +102,15 @@ export default class Ninbot {
       .subtract(weeksAgo, 'week');
     const toDate = fromDate.clone().endOf('isoWeek');
 
-    // Reset playlist
-    await spotify.clearPlaylist();
     const playlistName = `${process.env.PLAYLIST_NAME} (${fromDate.format(
       'Do MMMM',
     )} - ${toDate.format('Do MMMM')})`;
-    await spotify.renamePlaylist(playlistName);
+
+    // Reset playlist
+    if (savePlaylist) {
+      await spotify.clearPlaylist();
+      await spotify.renamePlaylist(playlistName);
+    }
 
     // Fetch all messages from the channel within the past week
     const messages = await this.fetchMessages(channel, fromDate, toDate);
@@ -222,7 +229,7 @@ export default class Ninbot {
     );
 
     // Update the playlist with the tracks
-    if (tracks.length) {
+    if (savePlaylist && tracks.length) {
       await spotify.addTracksToPlaylist(tracks.reverse());
     }
 
