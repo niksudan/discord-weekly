@@ -100,11 +100,10 @@ export default class Ninbot {
 
     // Reset playlist
     await spotify.clearPlaylist();
-    await spotify.renamePlaylist(
-      `${process.env.PLAYLIST_NAME} (${fromDate.format(
-        'Do MMMM',
-      )} - ${toDate.format('Do MMMM')})`,
-    );
+    const playlistName = `${process.env.PLAYLIST_NAME} (${fromDate.format(
+      'Do MMMM',
+    )} - ${toDate.format('Do MMMM')})`;
+    await spotify.renamePlaylist(playlistName);
 
     // Fetch all messages from the channel within the past week
     const messages = await this.fetchMessages(channel, fromDate, toDate);
@@ -150,9 +149,20 @@ export default class Ninbot {
 
     // Convert the submissions into Spotify URIs if possible
     const tracks: string[] = [];
-    const authors: User[] = [];
+    const contributions: { author: User; count: number }[] = [];
     let spotifyTrackCount = 0;
     let youtubeTrackCount = 0;
+
+    const addContribution = (author: User) => {
+      const index = contributions.findIndex(
+        contribution => contribution.author.id === author.id,
+      );
+      if (index === -1) {
+        contributions.push({ author, count: 1 });
+        return;
+      }
+      contributions[index].count += 1;
+    };
 
     for (let item of items) {
       switch (item.service) {
@@ -164,7 +174,7 @@ export default class Ninbot {
               '',
             )}`,
           );
-          authors.push(item.author);
+          addContribution(item.author);
           break;
 
         case 'youtube':
@@ -200,7 +210,7 @@ export default class Ninbot {
           if (fuzzyResults.length) {
             youtubeTrackCount += 1;
             tracks.push(fuzzyResults[0].uri);
-            authors.push(item.author);
+            addContribution(item.author);
           }
           break;
       }
@@ -220,5 +230,31 @@ export default class Ninbot {
       'Playlist was updated successfully',
       `https://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`,
     );
+
+    // Send the news update
+    const newsChannel = this.guild.channels.find(
+      channel => channel.name === 'nincord-weekly' && channel.type === 'text',
+    ) as TextChannel;
+    if (!newsChannel) {
+      return;
+    }
+
+    let message = `**${playlistName} is now available for listening!**\n\n`;
+
+    message += "This week's top curators:\n";
+    contributions
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .forEach(contribution => {
+        message += `- <@${contribution.author.id}> (${
+          contribution.count
+        } contribution${contribution.count === 1 ? '' : 's'})\n`;
+      });
+
+    message += `\nListen now!\nhttps://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`;
+
+    console.log(message);
+    await newsChannel.send(message);
+    console.log('News update sent!');
   }
 }
