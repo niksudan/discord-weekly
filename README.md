@@ -11,4 +11,4 @@ Your song will be added to the playlist if it is in one of the following formats
 - Spotify track (ninbot ignores album links for now)
 - YouTube video (ninbot will try it's best to match)
 
-The playlist updates every Monday at 00:00 UTC.
+The playlist updates every Monday at 00:00 UTC. In addition, a message is posted to `#nincord-weekly` that will mention the top 5 contributors of that week.
