@@ -5,6 +5,7 @@ import {
   SnowflakeUtil,
   Message,
   Collection,
+  User,
 } from 'discord.js';
 import * as moment from 'moment';
 import * as Fuse from 'fuse.js';
@@ -115,6 +116,7 @@ export default class Ninbot {
     let items: {
       url: string;
       service: 'spotify' | 'youtube';
+      author: User;
     }[] = [];
 
     // Filter for messages to those that contain valid links
@@ -127,6 +129,7 @@ export default class Ninbot {
           spotifyMatch.map(url => ({
             url,
             service: 'spotify',
+            author: message.author,
           })),
         );
       }
@@ -139,6 +142,7 @@ export default class Ninbot {
           youtubeMatch.map(url => ({
             url,
             service: 'youtube',
+            author: message.author,
           })),
         );
       }
@@ -146,6 +150,7 @@ export default class Ninbot {
 
     // Convert the submissions into Spotify URIs if possible
     const tracks: string[] = [];
+    const authors: User[] = [];
     let spotifyTrackCount = 0;
     let youtubeTrackCount = 0;
 
@@ -159,6 +164,7 @@ export default class Ninbot {
               '',
             )}`,
           );
+          authors.push(item.author);
           break;
 
         case 'youtube':
@@ -194,6 +200,7 @@ export default class Ninbot {
           if (fuzzyResults.length) {
             youtubeTrackCount += 1;
             tracks.push(fuzzyResults[0].uri);
+            authors.push(item.author);
           }
           break;
       }
