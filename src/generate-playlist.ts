@@ -6,11 +6,11 @@ import * as Sentry from '@sentry/node';
 import './config';
 
 (async () => {
-  // Abort the playlist generation if we take longer than 30 seconds
+  // Abort the playlist generation if we take longer than 2 minutes
   setTimeout(() => {
     console.log('Took too long, exiting');
     process.exit(1);
-  }, 1000 * 30);
+  }, 1000 * 120);
 
   try {
     // Start a new Spotify authentication server
