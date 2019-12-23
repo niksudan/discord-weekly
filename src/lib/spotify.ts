@@ -1,7 +1,7 @@
 import * as SpotifyWebApi from 'spotify-web-api-node';
 import * as fs from 'fs';
 import * as path from 'path';
-import chunk from 'lodash.chunk';
+import { chunk } from 'lodash';
 
 require('dotenv').config();
 
