@@ -29,7 +29,7 @@ import './config';
     await ninbot.login();
 
     // Generate a playlist
-    await ninbot.generatePlaylist(spotify, 1, false);
+    await ninbot.generatePlaylist(spotify, 1);
 
     process.exit(0);
   } catch (e) {
