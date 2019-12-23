@@ -1,6 +1,7 @@
 import * as SpotifyWebApi from 'spotify-web-api-node';
 import * as fs from 'fs';
 import * as path from 'path';
+import chunk from 'lodash.chunk';
 
 require('dotenv').config();
 
@@ -95,8 +96,16 @@ export default class Spotify {
   }
 
   public async addTracksToPlaylist(tracks: string[]) {
-    console.log('Adding tracks to playlist...');
-    return this.client.addTracksToPlaylist(process.env.PLAYLIST_ID, tracks);
+    const TRACKS_PER_PAYLOAD = 99;
+    const payloads = chunk(tracks, TRACKS_PER_PAYLOAD);
+    for (let i = 0; i < payloads.length; i += 1) {
+      console.log(
+        `Adding tracks ${i * TRACKS_PER_PAYLOAD}-${i * TRACKS_PER_PAYLOAD +
+          TRACKS_PER_PAYLOAD} to playlist...`,
+      );
+      const payload = payloads[i];
+      await this.client.addTracksToPlaylist(process.env.PLAYLIST_ID, payload);
+    }
   }
 
   public async clearPlaylist() {
