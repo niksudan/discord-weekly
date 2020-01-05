@@ -267,7 +267,7 @@ export default class Ninbot {
     message += `\nListen now!\nhttps://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`;
 
     console.log(message);
-    // await newsChannel.send(message);
+    await newsChannel.send(message);
     console.log(`News update sent to ${newsChannel.name}!`);
   }
 }
