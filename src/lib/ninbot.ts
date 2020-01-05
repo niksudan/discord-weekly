@@ -54,7 +54,9 @@ export default class Ninbot {
 
     // Fetch 50 messages before the specified end date
     console.log(
-      `Fetching messages from ${fromDate.toString()} to ${toDate.toString()}...`,
+      `Fetching messages in ${
+        channel.name
+      } from ${fromDate.toString()} to ${toDate.toString()}...`,
     );
     const newMessages = await channel.fetchMessages({
       before: SnowflakeUtil.generate(toDate.toDate()),
@@ -265,7 +267,7 @@ export default class Ninbot {
     message += `\nListen now!\nhttps://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`;
 
     console.log(message);
-    await newsChannel.send(message);
-    console.log('News update sent!');
+    // await newsChannel.send(message);
+    console.log(`News update sent to ${newsChannel.name}!`);
   }
 }
