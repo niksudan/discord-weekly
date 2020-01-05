@@ -89,7 +89,9 @@ export default class Ninbot {
   ) {
     console.log(`Generating playlist from ${weeksAgo} week(s) ago...`);
     const channel = this.guild.channels.find(
-      channel => channel.name === 'non-nin-music' && channel.type === 'text',
+      channel =>
+        channel.id === process.env.MUSIC_SOURCE_CHANNEL_ID &&
+        channel.type === 'text',
     ) as TextChannel;
     if (!channel) {
       return;
@@ -240,7 +242,9 @@ export default class Ninbot {
 
     // Send the news update
     const newsChannel = this.guild.channels.find(
-      channel => channel.name === 'nincord-weekly' && channel.type === 'text',
+      channel =>
+        channel.id === process.env.MUSIC_DESTINATION_CHANNEL_ID &&
+        channel.type === 'text',
     ) as TextChannel;
     if (!newsChannel) {
       return;
