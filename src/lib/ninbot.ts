@@ -199,6 +199,10 @@ export default class Ninbot {
             .replace(/[^A-Za-z0-9 ]/g, '')
             .replace(/\s{2,}/g, ' ');
 
+          if (formattedTitle.length < 3) {
+            break;
+          }
+
           const fuse = new Fuse(await spotify.searchTracks(formattedTitle), {
             threshold: 0.8,
             keys: [
