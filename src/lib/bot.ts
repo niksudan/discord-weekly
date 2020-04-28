@@ -17,7 +17,7 @@ require('dotenv').config();
 
 type Messages = Collection<string, Message>;
 
-export default class Ninbot {
+export default class Bot {
   public client: Client;
   public guild: Guild;
 
@@ -26,13 +26,13 @@ export default class Ninbot {
   }
 
   /**
-   * Initiate year zero
+   * Initiate
    */
   public async login() {
     console.log('Logging in...');
     await this.client.login(process.env.DISCORD_TOKEN);
     this.guild = this.client.guilds.find(
-      guild => guild.id === process.env.DISCORD_GUILD_ID,
+      (guild) => guild.id === process.env.DISCORD_GUILD_ID,
     );
     console.log(
       `Logged in to Discord and connected to ${this.guild.name} (#${this.guild.id})`,
@@ -68,7 +68,7 @@ export default class Ninbot {
     }
 
     // We're only interested in getting the messages before the target date
-    const messagesToAdd = newMessages.filter(message =>
+    const messagesToAdd = newMessages.filter((message) =>
       moment(message.createdAt).isBetween(fromDate, toDate),
     );
 
@@ -91,7 +91,7 @@ export default class Ninbot {
   ) {
     console.log(`Generating playlist from ${weeksAgo} week(s) ago...`);
     const channel = this.guild.channels.find(
-      channel =>
+      (channel) =>
         channel.id === process.env.MUSIC_SOURCE_CHANNEL_ID &&
         channel.type === 'text',
     ) as TextChannel;
@@ -130,13 +130,13 @@ export default class Ninbot {
     }[] = [];
 
     // Filter for messages to those that contain valid links
-    messages.forEach(message => {
+    messages.forEach((message) => {
       const spotifyMatch = message.content.match(
         /https:\/\/open.spotify.com\/track\/(\w+)/gi,
       );
       if (spotifyMatch) {
         items = items.concat(
-          spotifyMatch.map(url => ({
+          spotifyMatch.map((url) => ({
             url,
             service: 'spotify',
             author: message.author,
@@ -149,7 +149,7 @@ export default class Ninbot {
       );
       if (youtubeMatch) {
         items = items.concat(
-          youtubeMatch.map(url => ({
+          youtubeMatch.map((url) => ({
             url,
             service: 'youtube',
             author: message.author,
@@ -166,7 +166,7 @@ export default class Ninbot {
 
     const addContribution = (author: User) => {
       const index = contributions.findIndex(
-        contribution => contribution.author.id === author.id,
+        (contribution) => contribution.author.id === author.id,
       );
       if (index === -1) {
         contributions.push({ author, count: 1 });
@@ -248,7 +248,7 @@ export default class Ninbot {
 
     // Send the news update
     const newsChannel = this.guild.channels.find(
-      channel =>
+      (channel) =>
         channel.id === process.env.MUSIC_DESTINATION_CHANNEL_ID &&
         channel.type === 'text',
     ) as TextChannel;
@@ -262,7 +262,7 @@ export default class Ninbot {
     contributions
       .sort((a, b) => b.count - a.count)
       .slice(0, 5)
-      .forEach(contribution => {
+      .forEach((contribution) => {
         message += `- <@${contribution.author.id}> (${
           contribution.count
         } contribution${contribution.count === 1 ? '' : 's'})\n`;

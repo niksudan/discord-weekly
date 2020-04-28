@@ -1,4 +1,4 @@
-import Ninbot from './lib/ninbot';
+import Bot from './lib/bot';
 import Server from './lib/server';
 import Spotify from './lib/spotify';
 import * as Sentry from '@sentry/node';
@@ -24,12 +24,12 @@ import './config';
     // Validate Spotify credentials
     await spotify.refreshTokens();
 
-    // Boot up ninbot
-    const ninbot = new Ninbot();
-    await ninbot.login();
+    // Boot up bot
+    const bot = new Bot();
+    await bot.login();
 
     // Generate a playlist
-    await ninbot.generatePlaylist(spotify, 1);
+    await bot.generatePlaylist(spotify, 1);
 
     process.exit(0);
   } catch (e) {

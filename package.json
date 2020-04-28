@@ -1,8 +1,8 @@
 {
-  "name": "nincord-weekly",
-  "version": "1.0.0",
-  "author": "",
-  "license": "ISC",
+  "name": "discord-weekly",
+  "version": "0.2.0",
+  "author": "Nik Sudan",
+  "license": "MIT",
   "dependencies": {
     "@sentry/node": "5.5.0",
     "body-parser": "^1.19.0",
