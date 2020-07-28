@@ -8,7 +8,7 @@ import './config';
 (async () => {
   // Abort the playlist generation if we take longer than 2 minutes
   setTimeout(() => {
-    console.log('Took too long, exiting');
+    console.log('⚠️  Took too long, exiting');
     process.exit(1);
   }, 1000 * 120);
 
@@ -17,7 +17,7 @@ import './config';
     const spotify = new Spotify();
     new Server(spotify);
     if (!spotify.isAuthenticated) {
-      console.log("WARNING: Spotify features won't work until you log in");
+      console.log("⚠️  WARNING: Spotify features won't work until you log in");
       return;
     }
 

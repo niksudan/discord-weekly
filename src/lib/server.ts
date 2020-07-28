@@ -32,7 +32,9 @@ export default class Server {
     app.set('port', process.env.SERVER_PORT || 9000);
     app.listen(app.get('port'), () => {
       console.log(
-        `Spotify auth server is live at http://localhost:${app.get('port')}`,
+        `✅  Spotify auth server is live at http://localhost:${app.get(
+          'port',
+        )}, go log in!`,
       );
     });
   }

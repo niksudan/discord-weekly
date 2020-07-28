@@ -5,11 +5,18 @@ import { chunk } from 'lodash';
 
 require('dotenv').config();
 
-interface SpotifyTrack {
+export interface SpotifyTrack {
   uri: string;
   name: string;
   popularity: number;
   album: string;
+  artists: string[];
+}
+
+export interface SpotifyAlbum {
+  id: string;
+  name: string;
+  genres: string[];
   artists: string[];
 }
 
@@ -83,7 +90,7 @@ export default class Spotify {
     const response = await this.client.refreshAccessToken();
     this.setTokens(response.body.access_token, response.body.refresh_token);
     await this.getAccountDetails();
-    console.log('Logged in to Spotify as', this.accountName);
+    console.log('✅  Logged in to Spotify as', this.accountName);
   }
 
   private async getAccountDetails() {
@@ -93,7 +100,7 @@ export default class Spotify {
   }
 
   public async renamePlaylist(name: string) {
-    console.log(`Renaming playlist to \"${name}\"...`);
+    console.log(`✏️  Renaming playlist to \"${name}\"...`);
     await this.client.changePlaylistDetails(process.env.PLAYLIST_ID, {
       name,
     });
@@ -104,7 +111,7 @@ export default class Spotify {
     const payloads = chunk(tracks, TRACKS_PER_PAYLOAD);
     for (let i = 0; i < payloads.length; i += 1) {
       console.log(
-        `Adding tracks ${i * TRACKS_PER_PAYLOAD}-${
+        `➕  Adding tracks ${i * TRACKS_PER_PAYLOAD}-${
           i * TRACKS_PER_PAYLOAD + TRACKS_PER_PAYLOAD
         } to playlist...`,
       );
@@ -114,7 +121,7 @@ export default class Spotify {
   }
 
   public async clearPlaylist() {
-    console.log('Clearing playlist...');
+    console.log('🗑  Clearing playlist...');
     const response = await this.client.getPlaylistTracks(
       process.env.PLAYLIST_ID,
     );
@@ -139,17 +146,28 @@ export default class Spotify {
     }
   }
 
+  public async getTrack(id: string): Promise<SpotifyTrack> {
+    const response = await this.client.getTrack(id);
+    return {
+      uri: response.body.uri,
+      name: response.body.name,
+      popularity: response.body.popularity,
+      album: response.body.album.name,
+      artists: response.body.artists.map((artist) => ({
+        name: artist.name,
+      })),
+    };
+  }
+
   public async searchTracks(query: string, limit = 5): Promise<SpotifyTrack[]> {
-    console.log(`Searching tracks for "${query}"...`);
+    console.log(`🔍  Searching Spotify for "${query}"...`);
     const response = await this.client.searchTracks(query, { limit });
     return response.body.tracks.items.map((item) => ({
       uri: item.uri,
       name: item.name,
       popularity: item.popularity,
-      album: item.album.name,
-      artists: item.artists.map((artist) => ({
-        name: artist.name,
-      })),
+      album: item.album.id,
+      artists: item.artists.map((artist) => artist.name),
     }));
   }
 }
