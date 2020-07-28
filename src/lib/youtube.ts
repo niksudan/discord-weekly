@@ -15,16 +15,15 @@ export default class YouTube {
       return;
     }
 
-    const response = await fetch(
-      `http://youtube.com/get_video_info?html5=1&video_id=${id}`,
-    ).then((res) => res.text());
-
-    const query = queryString.parse(response);
-    if (!query || !query.player_response) {
-      return;
+    try {
+      const response = await fetch(
+        `http://youtube.com/get_video_info?html5=1&video_id=${id}`,
+      ).then((res) => res.text());
+      const query = queryString.parse(response);
+      const { videoDetails } = JSON.parse(query.player_response.toString());
+      return videoDetails.title;
+    } catch (e) {
+      console.log('Error with YouTube:', e.message);
     }
-
-    const { videoDetails } = JSON.parse(query.player_response.toString());
-    return videoDetails.title;
   }
 }
