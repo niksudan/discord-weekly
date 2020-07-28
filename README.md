@@ -8,8 +8,10 @@ This bot retrieves the last week's worth of songs in a channel and then updates 
 
 Song are added to the playlist if it is in one of the following formats:
 
-- Spotify track (will ignore album links for now)
-- YouTube video (will try it's best to match)
+- Spotify track URL
+- YouTube video URL
+- Apple Music track URL
+- SoundCloud track URL
 
 After each new playlist, a message is posted to a channel that will mention the top 5 contributors of that week.
 

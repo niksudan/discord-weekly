@@ -1,4 +1,4 @@
-import * as express from 'express';
+import express from 'express';
 import * as bodyParser from 'body-parser';
 import Spotify from './spotify';
 
@@ -22,7 +22,7 @@ export default class Server {
         res.sendStatus(200);
       }
       try {
-        await spotify.login(req.query.code);
+        await spotify.login(req.query.code.toString());
         res.sendStatus(200);
       } catch (e) {
         res.sendStatus(404);

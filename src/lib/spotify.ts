@@ -1,4 +1,4 @@
-import * as SpotifyWebApi from 'spotify-web-api-node';
+import SpotifyWebApi from 'spotify-web-api-node';
 import * as fs from 'fs';
 import * as path from 'path';
 import { chunk } from 'lodash';
@@ -24,6 +24,10 @@ export default class Spotify {
       clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
       redirectUri: process.env.SPOTIFY_REDIRECT_URI,
     });
+  }
+
+  public static match(content: string) {
+    return content.match(/https:\/\/open.spotify.com\/track\/(\w+)/gi);
   }
 
   private get authTokenFilepath() {
@@ -100,8 +104,9 @@ export default class Spotify {
     const payloads = chunk(tracks, TRACKS_PER_PAYLOAD);
     for (let i = 0; i < payloads.length; i += 1) {
       console.log(
-        `Adding tracks ${i * TRACKS_PER_PAYLOAD}-${i * TRACKS_PER_PAYLOAD +
-          TRACKS_PER_PAYLOAD} to playlist...`,
+        `Adding tracks ${i * TRACKS_PER_PAYLOAD}-${
+          i * TRACKS_PER_PAYLOAD + TRACKS_PER_PAYLOAD
+        } to playlist...`,
       );
       const payload = payloads[i];
       await this.client.addTracksToPlaylist(process.env.PLAYLIST_ID, payload);
@@ -113,7 +118,7 @@ export default class Spotify {
     const response = await this.client.getPlaylistTracks(
       process.env.PLAYLIST_ID,
     );
-    const tracks = response.body.items.map(item => ({
+    const tracks = response.body.items.map((item) => ({
       uri: item.track.uri,
     }));
     return this.client.removeTracksFromPlaylist(
@@ -125,12 +130,12 @@ export default class Spotify {
   public async searchTracks(query: string, limit = 5): Promise<SpotifyTrack[]> {
     console.log(`Searching tracks for "${query}"...`);
     const response = await this.client.searchTracks(query, { limit });
-    return response.body.tracks.items.map(item => ({
+    return response.body.tracks.items.map((item) => ({
       uri: item.uri,
       name: item.name,
       popularity: item.popularity,
       album: item.album.name,
-      artists: item.artists.map(artist => ({
+      artists: item.artists.map((artist) => ({
         name: artist.name,
       })),
     }));
