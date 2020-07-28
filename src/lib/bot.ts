@@ -9,6 +9,7 @@ import {
 } from 'discord.js';
 import moment from 'moment';
 import Fuse from 'fuse.js';
+import { uniq } from 'lodash';
 
 import Spotify from './spotify';
 import YouTube from './youtube';
@@ -286,7 +287,8 @@ export default class Bot {
 
     // Update the playlist with the tracks
     if (savePlaylist && tracks.length) {
-      await spotify.addTracksToPlaylist(tracks.reverse());
+      const uris = uniq(tracks.map((track) => track.uri).reverse());
+      await spotify.addTracksToPlaylist(uris);
     }
 
     console.log(
