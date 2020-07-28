@@ -13,7 +13,11 @@ Song are added to the playlist if it is in one of the following formats:
 - Apple Music track URL
 - SoundCloud track URL
 
-After each new playlist, a message is posted to a channel that will mention the top 5 contributors of that week.
+After each new playlist, a message is posted to a channel that will show the following information:
+
+- Top 5 artists
+- Top 5 genres
+- Top 5 contributors
 
 ## Installation
 
