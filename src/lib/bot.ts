@@ -9,7 +9,7 @@ import {
 } from 'discord.js';
 import moment from 'moment';
 import Fuse from 'fuse.js';
-import { uniq } from 'lodash';
+import { uniq, chunk, flatten, capitalize } from 'lodash';
 
 import Spotify, { SpotifyTrack } from './spotify';
 import YouTube from './youtube';
@@ -157,7 +157,7 @@ export default class Bot {
   public async convertTrackData(spotify: Spotify, trackData: TrackData[]) {
     const tracks: SpotifyTrack[] = [];
     const contributions: { author: User; count: number }[] = [];
-    const artists: { name: string; count: number }[] = [];
+    const artists: { id: string; name: string; count: number }[] = [];
     const counts: Record<ServiceType, number> = {
       spotify: 0,
       youtube: 0,
@@ -171,9 +171,9 @@ export default class Bot {
 
       // Log artist stats
       track.artists.forEach((artist) => {
-        const artistIndex = artists.findIndex(({ name }) => name === artist);
+        const artistIndex = artists.findIndex(({ id }) => id === artist.id);
         if (artistIndex === -1) {
-          artists.push({ name: artist, count: 1 });
+          artists.push({ id: artist.id, name: artist.name, count: 1 });
         } else {
           artists[artistIndex].count += 1;
         }
@@ -222,7 +222,7 @@ export default class Bot {
                 weight: 0.7,
               },
               {
-                name: 'artists',
+                name: 'artists.name',
                 weight: 0.5,
               },
               {
@@ -242,9 +242,30 @@ export default class Bot {
       }
     }
 
-    console.log(artists);
-
     return { tracks, counts, contributions, artists };
+  }
+
+  /**
+   * Determine the top list of genres for the playlist
+   */
+  public async fetchGenres(spotify: Spotify, artistIds: string[]) {
+    const genres: { name: string; count: number }[] = [];
+    const artists = flatten(
+      await Promise.all(
+        chunk(artistIds, 50).map((artistChunk) =>
+          spotify.getArtists(artistChunk),
+        ),
+      ),
+    );
+    flatten(artists.map((artist) => artist.genres)).forEach((name) => {
+      const index = genres.findIndex((genre) => genre.name === name);
+      if (index === -1) {
+        genres.push({ name, count: 1 });
+      } else {
+        genres[index].count += 1;
+      }
+    });
+    return genres;
   }
 
   /**
@@ -297,6 +318,12 @@ export default class Bot {
       return;
     }
 
+    // Determine genres from artist pages if possible
+    const genres = await this.fetchGenres(
+      spotify,
+      artists.map(({ id }) => id),
+    );
+
     const uris = uniq(tracks.map((track) => track.uri).reverse());
     console.log(`🎵  ${uris.length} tracks found`, counts);
 
@@ -323,12 +350,24 @@ export default class Bot {
 
     message += '👩‍🎤 `Most Popular Artists`\n\n';
     artists
+      .reverse()
       .sort((a, b) => b.count - a.count)
       .slice(0, 5)
       .forEach((artist) => {
         message += `▪️ ${artist.name} (${artist.count} track${
           artist.count === 1 ? '' : 's'
         })\n`;
+      });
+
+    message += '\n🎸 `Top Genres`\n\n';
+    genres
+      .reverse()
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .forEach((genre) => {
+        message += `▪️ ${capitalize(genre.name)} (${Math.round(
+          (genre.count / artists.length) * 100,
+        )}%)\n`;
       });
 
     message += '\n🏆 `Top Curators`\n\n';
@@ -341,7 +380,7 @@ export default class Bot {
         } contribution${contribution.count === 1 ? '' : 's'})\n`;
       });
 
-    message += `\n▶️ Listen now!\nhttps://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`;
+    message += `\nThank you for contributing, and enjoy your listen!\n\n🎵 https://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`;
 
     await newsChannel.send(message);
     console.log(`✨  News update sent to ${newsChannel.name}!`);

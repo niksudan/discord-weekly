@@ -9,15 +9,16 @@ export interface SpotifyTrack {
   uri: string;
   name: string;
   popularity: number;
-  album: string;
-  artists: string[];
+  artists: {
+    name: string;
+    id: string;
+  }[];
 }
 
-export interface SpotifyAlbum {
+export interface SpotifyArtist {
   id: string;
   name: string;
   genres: string[];
-  artists: string[];
 }
 
 export default class Spotify {
@@ -152,8 +153,7 @@ export default class Spotify {
       uri: response.body.uri,
       name: response.body.name,
       popularity: response.body.popularity,
-      album: response.body.album.name,
-      artists: response.body.artists.map((artist) => artist.name),
+      artists: response.body.artists.map(({ id, name }) => ({ id, name })),
     };
   }
 
@@ -164,18 +164,18 @@ export default class Spotify {
       uri: item.uri,
       name: item.name,
       popularity: item.popularity,
-      album: item.album.id,
-      artists: item.artists.map((artist) => artist.name),
+      artists: item.artists.map(({ id, name }) => ({ id, name })),
     }));
   }
 
-  public async getAlbums(ids: string[]): Promise<SpotifyAlbum[]> {
-    const response = await this.client.getAlbums(ids);
-    return response.body.albums.map((item) => ({
-      id: item.id,
-      name: item.name,
-      genres: item.genres,
-      artists: item.artists.map((artist) => artist.name),
-    }));
+  public async getArtists(ids: string[]): Promise<SpotifyArtist[]> {
+    const response = await this.client.getArtists(ids);
+    return response.body.artists
+      .filter((item) => !!item)
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        genres: item.genres,
+      }));
   }
 }

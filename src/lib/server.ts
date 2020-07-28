@@ -34,7 +34,7 @@ export default class Server {
       console.log(
         `✅  Spotify auth server is live at http://localhost:${app.get(
           'port',
-        )}, go log in!`,
+        )}`,
       );
     });
   }
