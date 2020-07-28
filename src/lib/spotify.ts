@@ -118,13 +118,25 @@ export default class Spotify {
     const response = await this.client.getPlaylistTracks(
       process.env.PLAYLIST_ID,
     );
-    const tracks = response.body.items.map((item) => ({
+
+    const tracks: { uri: string }[] = response.body.items.map((item) => ({
       uri: item.track.uri,
     }));
-    return this.client.removeTracksFromPlaylist(
+    const tracksToRemove = tracks.slice(0, 50);
+
+    await this.client.removeTracksFromPlaylist(
       process.env.PLAYLIST_ID,
-      tracks,
+      tracksToRemove,
     );
+
+    if (tracksToRemove.length > 0) {
+      return new Promise((resolve) => {
+        setTimeout(async () => {
+          await this.clearPlaylist();
+          resolve();
+        }, 500);
+      });
+    }
   }
 
   public async searchTracks(query: string, limit = 5): Promise<SpotifyTrack[]> {
