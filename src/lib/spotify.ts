@@ -153,9 +153,7 @@ export default class Spotify {
       name: response.body.name,
       popularity: response.body.popularity,
       album: response.body.album.name,
-      artists: response.body.artists.map((artist) => ({
-        name: artist.name,
-      })),
+      artists: response.body.artists.map((artist) => artist.name),
     };
   }
 
@@ -167,6 +165,16 @@ export default class Spotify {
       name: item.name,
       popularity: item.popularity,
       album: item.album.id,
+      artists: item.artists.map((artist) => artist.name),
+    }));
+  }
+
+  public async getAlbums(ids: string[]): Promise<SpotifyAlbum[]> {
+    const response = await this.client.getAlbums(ids);
+    return response.body.albums.map((item) => ({
+      id: item.id,
+      name: item.name,
+      genres: item.genres,
       artists: item.artists.map((artist) => artist.name),
     }));
   }

@@ -15,6 +15,7 @@ import Spotify, { SpotifyTrack } from './spotify';
 import YouTube from './youtube';
 import AppleMusic from './apple';
 import SoundCloud from './soundcloud';
+import { stringify } from 'querystring';
 
 require('dotenv').config();
 
@@ -156,23 +157,37 @@ export default class Bot {
   public async convertTrackData(spotify: Spotify, trackData: TrackData[]) {
     const tracks: SpotifyTrack[] = [];
     const contributions: { author: User; count: number }[] = [];
-    // const artists =
-    const stats: Record<ServiceType, number> = {
+    const artists: { name: string; count: number }[] = [];
+    const counts: Record<ServiceType, number> = {
       spotify: 0,
       youtube: 0,
       apple: 0,
       soundcloud: 0,
     };
 
-    const addContribution = (author: User) => {
-      const index = contributions.findIndex(
+    const logStats = (track: SpotifyTrack, author: User, service: Service) => {
+      // General stats
+      counts[service.type] += 1;
+
+      // Log artist stats
+      track.artists.forEach((artist) => {
+        const artistIndex = artists.findIndex(({ name }) => name === artist);
+        if (artistIndex === -1) {
+          artists.push({ name: artist, count: 1 });
+        } else {
+          artists[artistIndex].count += 1;
+        }
+      });
+
+      // Contributor stats
+      const contributorIndex = contributions.findIndex(
         (contribution) => contribution.author.id === author.id,
       );
-      if (index === -1) {
+      if (contributorIndex === -1) {
         contributions.push({ author, count: 1 });
-        return;
+      } else {
+        contributions[contributorIndex].count += 1;
       }
-      contributions[index].count += 1;
     };
 
     for (let { author, service, url } of trackData) {
@@ -183,8 +198,7 @@ export default class Bot {
         );
         if (track) {
           tracks.push(track);
-          stats.spotify += 1;
-          addContribution(author);
+          logStats(track, author, service);
         }
       } else {
         // Parse title from service
@@ -222,14 +236,15 @@ export default class Bot {
           const fuzzyResults = fuse.search(title);
           if (fuzzyResults.length) {
             tracks.push(fuzzyResults[0].item);
-            addContribution(author);
-            stats[service.type] += 1;
+            logStats(fuzzyResults[0].item, author, service);
           }
         }
       }
     }
 
-    return { tracks, stats, contributions };
+    console.log(artists);
+
+    return { tracks, counts, contributions, artists };
   }
 
   /**
@@ -269,10 +284,12 @@ export default class Bot {
     console.log(`❓  ${trackData.length} contained track links`);
 
     // Convert URLs into Spotify URIs if possible
-    const { tracks, stats, contributions } = await this.convertTrackData(
-      spotify,
-      trackData,
-    );
+    const {
+      tracks,
+      counts,
+      contributions,
+      artists,
+    } = await this.convertTrackData(spotify, trackData);
 
     // Exit if we didn't find any tracks
     if (!tracks.length) {
@@ -281,7 +298,7 @@ export default class Bot {
     }
 
     const uris = uniq(tracks.map((track) => track.uri).reverse());
-    console.log(`🎵  ${uris.length} tracks found`, stats);
+    console.log(`🎵  ${uris.length} tracks found`, counts);
 
     // Reset and update playlist
     if (savePlaylist) {
@@ -302,19 +319,29 @@ export default class Bot {
       return;
     }
 
-    let message = `**${playlistName} is now available for listening!**\n\n`;
+    let message = `✨ **${playlistName} is now available for listening!** ✨\n\n`;
 
-    message += "This week's top curators:\n";
+    message += '👩‍🎤 `Most Popular Artists`\n\n';
+    artists
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .forEach((artist) => {
+        message += `▪️ ${artist.name} (${artist.count} track${
+          artist.count === 1 ? '' : 's'
+        })\n`;
+      });
+
+    message += '\n🏆 `Top Curators`\n\n';
     contributions
       .sort((a, b) => b.count - a.count)
       .slice(0, 5)
       .forEach((contribution) => {
-        message += `- <@${contribution.author.id}> (${
+        message += `▪️ <@${contribution.author.id}> (${
           contribution.count
         } contribution${contribution.count === 1 ? '' : 's'})\n`;
       });
 
-    message += `\nListen now!\nhttps://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`;
+    message += `\n▶️ Listen now!\nhttps://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`;
 
     await newsChannel.send(message);
     console.log(`✨  News update sent to ${newsChannel.name}!`);
