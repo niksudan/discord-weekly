@@ -122,9 +122,7 @@ export default class Bot {
    * Find a channel by ID
    */
   private async findChannel(id: string) {
-    return (await this.client.channels.fetch(
-      process.env.MUSIC_SOURCE_CHANNEL_ID,
-    )) as TextChannel;
+    return (await this.client.channels.fetch(id)) as TextChannel;
   }
 
   /**
