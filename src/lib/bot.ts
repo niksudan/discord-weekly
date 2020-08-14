@@ -18,7 +18,10 @@ import SoundCloud from './soundcloud';
 
 require('dotenv').config();
 
+const LIKE_THRESHOLD = 2;
 const DISLIKE_THRESHOLD = 2;
+const ARTISTS_THRESHOLD = 2;
+const NUMBER_OF_ITEMS = 5;
 
 type Messages = Collection<string, Message>;
 
@@ -385,30 +388,45 @@ export default class Bot {
 
     message += '👩‍🎤 `Most Popular Artists`\n\n';
     artists
-      .reverse()
-      .sort((a, b) => b.count - a.count)
+        .reverse()
+        .sort((a, b) => b.count - a.count)
       .slice(0, 5)
-      .forEach((artist) => {
-        message += `▪️ ${artist.name} (${artist.count} track${
-          artist.count === 1 ? '' : 's'
-        })\n`;
-      });
+        .forEach((artist) => {
+          message += `▪️ ${artist.name} (${artist.count} track${
+            artist.count === 1 ? '' : 's'
+          })\n`;
+        });
 
-    message += '\n🎸 `Top Genres`\n\n';
+    // Genres
+    message += '\n🎸 `Dominant Genres`\n\n';
     genres
       .reverse()
       .sort((a, b) => b.count - a.count)
-      .slice(0, 5)
+      .slice(0, NUMBER_OF_ITEMS)
       .forEach((genre) => {
         message += `▪️ ${capitalize(genre.name)} (${Math.round(
           (genre.count / finalTracks.length) * 100,
         )}%)\n`;
       });
 
+    // Tracks
+    const popularTracks = finalTracks.filter(
+      ({ likes }) => likes >= LIKE_THRESHOLD,
+    );
+    if (popularTracks.length > 0) {
+      message += '\n💽 `Most Liked Tracks`\n\n';
+      popularTracks.slice(0, NUMBER_OF_ITEMS).forEach(({ track, likes }) => {
+        message += `▪️ ${track.artists.map(({ name }) => name).join(', ')} - ${
+          track.name
+        } (${likes} like${likes === 1 ? '' : 's'})\n`;
+      });
+    }
+
+    // Curators
     message += '\n🏆 `Top Curators`\n\n';
     contributions
       .sort((a, b) => b.count - a.count)
-      .slice(0, 5)
+      .slice(0, NUMBER_OF_ITEMS)
       .forEach((contribution) => {
         message += `▪️ <@${contribution.author.id}> (${
           contribution.count
