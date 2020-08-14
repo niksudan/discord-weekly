@@ -439,7 +439,9 @@ export default class Bot {
         } contribution${contribution.count === 1 ? '' : 's'})\n`;
       });
 
-    message += `\nThank you for contributing, and enjoy your listen!\n\n🎵 https://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`;
+    // Final words
+    message += `\nIn total, **${finalTracks.length} tracks** were added to the playlist.`;
+    message += `\nThank you for contributing, and enjoy your listen! 🎵\nhttps://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`;
 
     if (process.env.ENVIRONMENT !== 'development') {
       await newsChannel.send(message);
