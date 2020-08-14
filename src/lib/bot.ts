@@ -19,7 +19,7 @@ import SoundCloud from './soundcloud';
 require('dotenv').config();
 
 const LIKE_THRESHOLD = 2;
-const DISLIKE_THRESHOLD = 2;
+const DISLIKE_THRESHOLD = -2;
 const ARTISTS_THRESHOLD = 2;
 const NUMBER_OF_ITEMS = 5;
 
@@ -32,7 +32,6 @@ interface TrackData {
   service: Service;
   author: User;
   likes: number;
-  dislikes: number;
 }
 
 interface Service {
@@ -166,14 +165,13 @@ export default class Bot {
           }
 
           // Ignore pretty disliked tracks
-          if (dislikes < DISLIKE_THRESHOLD) {
+          if (likes - dislikes <= DISLIKE_THRESHOLD) {
             trackData = trackData.concat(
               match.map((url) => ({
                 url,
                 service,
                 author,
-                likes,
-                dislikes,
+                likes: likes - dislikes,
               })),
             );
           }
