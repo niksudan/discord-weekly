@@ -9,15 +9,16 @@ import {
 } from 'discord.js';
 import moment from 'moment';
 import Fuse from 'fuse.js';
-import { uniq, chunk, flatten, capitalize } from 'lodash';
+import { uniq, chunk, flatten, capitalize, orderBy } from 'lodash';
 
 import Spotify, { SpotifyTrack } from './spotify';
 import YouTube from './youtube';
 import AppleMusic from './apple';
 import SoundCloud from './soundcloud';
-import { stringify } from 'querystring';
 
 require('dotenv').config();
+
+const DISLIKE_THRESHOLD = 2;
 
 type Messages = Collection<string, Message>;
 
@@ -27,6 +28,8 @@ interface TrackData {
   url: string;
   service: Service;
   author: User;
+  likes: number;
+  dislikes: number;
 }
 
 interface Service {
@@ -134,24 +137,47 @@ export default class Bot {
   /**
    * Find messages with valid links
    */
-  private parseTrackData(messages: Messages) {
+  private async parseTrackData(messages: Messages) {
     let trackData: TrackData[] = [];
-    messages.forEach(({ content, author }) => {
+
+    for (let { content, author, reactions } of messages.values()) {
       let match: RegExpMatchArray;
       for (let service of services) {
         match = service.match(content);
         if (match) {
-          trackData = trackData.concat(
-            match.map((url) => ({
-              url,
-              service,
-              author,
-            })),
-          );
+          let likes = 0;
+          let dislikes = 0;
+
+          // Determine number of accurate likes/dislikes (do not count bots/authors)
+          const likeData = reactions.cache.get('👍');
+          if (likeData) {
+            likes = (await likeData.users.fetch()).filter(
+              (user) => user.id !== author.id && !user.bot,
+            ).size;
+          }
+          const dislikeData = reactions.cache.get('👎');
+          if (dislikeData) {
+            dislikes = (await dislikeData.users.fetch()).filter(
+              (user) => user.id !== author.id && !user.bot,
+            ).size;
+          }
+
+          // Ignore pretty disliked tracks
+          if (dislikes < DISLIKE_THRESHOLD) {
+            trackData = trackData.concat(
+              match.map((url) => ({
+                url,
+                service,
+                author,
+                likes,
+                dislikes,
+              })),
+            );
+          }
         }
         match = undefined;
       }
-    });
+    }
     return trackData;
   }
 
@@ -159,7 +185,7 @@ export default class Bot {
    * Convert track data into Spotify URIs
    */
   public async convertTrackData(spotify: Spotify, trackData: TrackData[]) {
-    const tracks: SpotifyTrack[] = [];
+    const tracks: { track: SpotifyTrack; likes: number }[] = [];
     const contributions: { author: User; count: number }[] = [];
     const artists: ArtistData[] = [];
     const counts: Record<ServiceType, number> = {
@@ -194,14 +220,14 @@ export default class Bot {
       }
     };
 
-    for (let { author, service, url } of trackData) {
+    for (let { author, service, url, likes } of trackData) {
       // Add Spotify track directly
       if (service.type === 'spotify') {
         const track = await spotify.getTrack(
           url.replace(/https:\/\/open.spotify.com\/track\//gi, ''),
         );
         if (track) {
-          tracks.push(track);
+          tracks.push({ track, likes });
           logStats(track, author, service);
         }
       } else {
@@ -239,7 +265,7 @@ export default class Bot {
           // Find the best match
           const fuzzyResults = fuse.search(title);
           if (fuzzyResults.length) {
-            tracks.push(fuzzyResults[0].item);
+            tracks.push({ track: fuzzyResults[0].item, likes });
             logStats(fuzzyResults[0].item, author, service);
           }
         }
@@ -310,7 +336,7 @@ export default class Bot {
     console.log(`💬  ${messages.size} messages were sent`);
 
     // Parse track URLs
-    const trackData = this.parseTrackData(messages);
+    const trackData = await this.parseTrackData(messages);
     console.log(`❓  ${trackData.length} contained track links`);
 
     // Convert URLs into Spotify URIs if possible
@@ -328,19 +354,17 @@ export default class Bot {
     }
 
     // Determine genres from artist pages if possible
-    const genres = await this.fetchGenres(
-      spotify,
-      artists.map(({ id }) => id),
-    );
-
-    const uris = uniq(tracks.map((track) => track.uri).reverse());
-    console.log(`🎵  ${uris.length} tracks found`, counts);
+    const genres = await this.fetchGenres(spotify, artists);
+    const finalTracks = uniq(orderBy(tracks, 'likes').reverse());
+    console.log(`🎵  ${finalTracks.length} tracks found`, counts);
 
     // Reset and update playlist
     if (process.env.ENVIRONMENT !== 'development') {
       await spotify.clearPlaylist();
       await spotify.renamePlaylist(playlistName);
-      await spotify.addTracksToPlaylist(uris);
+      await spotify.addTracksToPlaylist(
+        finalTracks.map(({ track }) => track.uri),
+      );
       console.log(
         '✨  Playlist updated successfully',
         `https://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`,
@@ -377,7 +401,7 @@ export default class Bot {
       .slice(0, 5)
       .forEach((genre) => {
         message += `▪️ ${capitalize(genre.name)} (${Math.round(
-          (genre.count / uris.length) * 100,
+          (genre.count / finalTracks.length) * 100,
         )}%)\n`;
       });
 
