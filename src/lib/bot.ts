@@ -35,6 +35,12 @@ interface Service {
   get?: (url: string) => Promise<string>;
 }
 
+interface ArtistData {
+  id: string;
+  name: string;
+  count: number;
+}
+
 const services: Service[] = [
   {
     type: 'spotify',
@@ -155,7 +161,7 @@ export default class Bot {
   public async convertTrackData(spotify: Spotify, trackData: TrackData[]) {
     const tracks: SpotifyTrack[] = [];
     const contributions: { author: User; count: number }[] = [];
-    const artists: { id: string; name: string; count: number }[] = [];
+    const artists: ArtistData[] = [];
     const counts: Record<ServiceType, number> = {
       spotify: 0,
       youtube: 0,
@@ -246,8 +252,11 @@ export default class Bot {
   /**
    * Determine the top list of genres for the playlist
    */
-  public async fetchGenres(spotify: Spotify, artistIds: string[]) {
+  public async fetchGenres(spotify: Spotify, artistData: ArtistData[]) {
     const genres: { name: string; count: number }[] = [];
+    const artistIds = artistData.map(({ id }) => id);
+
+    // Fetch Spotify data for all the artists
     const artists = flatten(
       await Promise.all(
         chunk(artistIds, 50).map((artistChunk) =>
@@ -255,14 +264,20 @@ export default class Bot {
         ),
       ),
     );
-    flatten(artists.map((artist) => artist.genres)).forEach((name) => {
-      const index = genres.findIndex((genre) => genre.name === name);
-      if (index === -1) {
-        genres.push({ name, count: 1 });
-      } else {
-        genres[index].count += 1;
-      }
+
+    artists.forEach((artist) => {
+      const artistGenres = flatten(artist.genres);
+      const weight = artistData.find(({ id }) => id === artist.id).count;
+      artistGenres.forEach((name) => {
+        const index = genres.findIndex((genre) => genre.name === name);
+        if (index === -1) {
+          genres.push({ name, count: weight });
+        } else {
+          genres[index].count += weight;
+        }
+      });
     });
+
     return genres;
   }
 
@@ -362,7 +377,7 @@ export default class Bot {
       .slice(0, 5)
       .forEach((genre) => {
         message += `▪️ ${capitalize(genre.name)} (${Math.round(
-          (genre.count / artists.length) * 100,
+          (genre.count / uris.length) * 100,
         )}%)\n`;
       });
 
