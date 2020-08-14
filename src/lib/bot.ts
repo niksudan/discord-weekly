@@ -386,16 +386,22 @@ export default class Bot {
 
     let message = `✨ **${playlistName} is now available for listening!** ✨\n\n`;
 
-    message += '👩‍🎤 `Most Popular Artists`\n\n';
-    artists
+    // Artists
+    const popularArtists = artists.filter(
+      ({ count }) => count >= ARTISTS_THRESHOLD,
+    );
+    if (popularArtists) {
+      message += '👩‍🎤 `Popular Artists`\n\n';
+      popularArtists
         .reverse()
         .sort((a, b) => b.count - a.count)
-      .slice(0, 5)
+        .slice(0, NUMBER_OF_ITEMS)
         .forEach((artist) => {
           message += `▪️ ${artist.name} (${artist.count} track${
             artist.count === 1 ? '' : 's'
           })\n`;
         });
+    }
 
     // Genres
     message += '\n🎸 `Dominant Genres`\n\n';
