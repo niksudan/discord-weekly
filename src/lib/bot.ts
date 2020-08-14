@@ -269,11 +269,7 @@ export default class Bot {
   /**
    * Generate a Spotify playlist
    */
-  public async generatePlaylist(
-    spotify: Spotify,
-    weeksAgo = 1,
-    savePlaylist = true,
-  ) {
+  public async generatePlaylist(spotify: Spotify, weeksAgo = 1) {
     console.log(`✨  Generating playlist from ${weeksAgo} week(s) ago...`);
     const channel = await this.findChannel(process.env.MUSIC_SOURCE_CHANNEL_ID);
     if (!channel) {
@@ -326,14 +322,16 @@ export default class Bot {
     console.log(`🎵  ${uris.length} tracks found`, counts);
 
     // Reset and update playlist
-    if (savePlaylist) {
+    if (process.env.ENVIRONMENT !== 'development') {
       await spotify.clearPlaylist();
       await spotify.renamePlaylist(playlistName);
-      await spotify.addTracksToPlaylist(uniq(uris));
+      await spotify.addTracksToPlaylist(uris);
       console.log(
         '✨  Playlist updated successfully',
         `https://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`,
       );
+    } else {
+      console.log('🛑  Playlist not saved (development mode)');
     }
 
     // Send the news update
@@ -380,7 +378,12 @@ export default class Bot {
 
     message += `\nThank you for contributing, and enjoy your listen!\n\n🎵 https://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`;
 
-    await newsChannel.send(message);
-    console.log(`✨  News update sent to ${newsChannel.name}!`);
+    if (process.env.ENVIRONMENT !== 'development') {
+      await newsChannel.send(message);
+      console.log(`✨  News update sent to ${newsChannel.name}!`);
+    } else {
+      console.log(`🛑  News update not sent (development mode)\n`);
+      console.log(message);
+    }
   }
 }

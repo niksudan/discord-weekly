@@ -3,7 +3,11 @@ import Server from './lib/server';
 import Spotify from './lib/spotify';
 import * as Sentry from '@sentry/node';
 
-import './config';
+require('dotenv').config();
+
+if (process.env.SENTRY_DSN) {
+  Sentry.init({ dsn: process.env.SENTRY_DSN });
+}
 
 (async () => {
   // Abort the playlist generation if we take longer than 2 minutes
