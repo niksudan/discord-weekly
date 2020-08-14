@@ -15,9 +15,17 @@ Song are added to the playlist if it is in one of the following formats:
 
 After each new playlist, a message is posted to a channel that will show the following information:
 
-- Top 5 artists
-- Top 5 genres
-- Top 5 contributors
+- Popular artists (with total tracks)
+- Dominant genres (with percentages)
+- Most liked tracks (with total like score)
+- Top contributors (with total contributions)
+- Number of tracks & playlist link
+
+## Reacting to Songs
+
+If a song gets reacted with a 👍, this is counted as a **like**. The more likes a song gets, the higher it will appear in the playlist.
+
+If a song gets reacted with a 👎, this is counted as a **dislike**. This subtracts from the total number of likes. If a song is disliked enough, it will not appear in the playlist.
 
 ## Installation
 

@@ -33,8 +33,8 @@ https://discordapp.com/developers/applications/123456/bot
 
 Copy the number right before `/bot` and paste it after the `client_id` variable in this URL:
 
-```
-https://discordapp.com/api/oauth2/authorize?client_id=<CLIENT_ID_HERE>&permissions=0&scope=bot
+```sh
+https://discordapp.com/api/oauth2/authorize?client_id=$CLIENT_ID_HERE&permissions=0&scope=bot
 ```
 
 Visit the link in your browser, and you should be able to invite the bot to your Discord server.
@@ -63,6 +63,8 @@ You will need to [enable developer mode](https://www.discordia.me/en/developer-m
 | `PLAYLIST_NAME`                | Name of the Spotify playlist                 | Think                                                                                                       |
 | `MUSIC_SOURCE_CHANNEL_ID`      | Discord channel ID where to get songs from   | Right click on the channel                                                                                  |
 | `MUSIC_DESTINATION_CHANNEL_ID` | Discord channel ID where to post playlist to | Right click on the channel                                                                                  |
+
+The `ENVIRONMENT` is an optional variable. If defined and set as `development`, the playlist will not update, and a message will not send to the channel.
 
 ## First Time Setup
 
