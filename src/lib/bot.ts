@@ -165,7 +165,7 @@ export default class Bot {
           }
 
           // Ignore pretty disliked tracks
-          if (likes - dislikes <= DISLIKE_THRESHOLD) {
+          if (likes - dislikes > DISLIKE_THRESHOLD) {
             trackData = trackData.concat(
               match.map((url) => ({
                 url,
@@ -388,7 +388,7 @@ export default class Bot {
     const popularArtists = artists.filter(
       ({ count }) => count >= ARTISTS_THRESHOLD,
     );
-    if (popularArtists) {
+    if (popularArtists.length > 0) {
       message += '👩‍🎤 `Popular Artists`\n\n';
       popularArtists
         .reverse()
@@ -402,16 +402,18 @@ export default class Bot {
     }
 
     // Genres
-    message += '\n🎸 `Dominant Genres`\n\n';
-    genres
-      .reverse()
-      .sort((a, b) => b.count - a.count)
-      .slice(0, NUMBER_OF_ITEMS)
-      .forEach((genre) => {
-        message += `▪️ ${capitalize(genre.name)} (${Math.round(
-          (genre.count / finalTracks.length) * 100,
-        )}%)\n`;
-      });
+    if (genres.length > 0) {
+      message += '\n🎸 `Dominant Genres`\n\n';
+      genres
+        .reverse()
+        .sort((a, b) => b.count - a.count)
+        .slice(0, NUMBER_OF_ITEMS)
+        .forEach((genre) => {
+          message += `▪️ ${capitalize(genre.name)} (${Math.round(
+            (genre.count / finalTracks.length) * 100,
+          )}%)\n`;
+        });
+    }
 
     // Tracks
     const popularTracks = finalTracks.filter(
