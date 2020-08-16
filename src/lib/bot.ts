@@ -187,7 +187,7 @@ export default class Bot {
    */
   public async convertTrackData(spotify: Spotify, trackData: TrackData[]) {
     const tracks: { track: SpotifyTrack; likes: number }[] = [];
-    const contributions: { author: User; count: number }[] = [];
+    const contributions: { author: User; count: number; likes: number }[] = [];
     const artists: ArtistData[] = [];
     const counts: Record<ServiceType, number> = {
       spotify: 0,
@@ -196,7 +196,12 @@ export default class Bot {
       soundcloud: 0,
     };
 
-    const logStats = (track: SpotifyTrack, author: User, service: Service) => {
+    const logStats = (
+      track: SpotifyTrack,
+      author: User,
+      service: Service,
+      likes: number,
+    ) => {
       // General stats
       counts[service.type] += 1;
 
@@ -215,9 +220,10 @@ export default class Bot {
         (contribution) => contribution.author.id === author.id,
       );
       if (contributorIndex === -1) {
-        contributions.push({ author, count: 1 });
+        contributions.push({ author, count: 1, likes });
       } else {
         contributions[contributorIndex].count += 1;
+        contributions[contributorIndex].likes += likes;
       }
     };
 
@@ -229,7 +235,7 @@ export default class Bot {
         );
         if (track) {
           tracks.push({ track, likes });
-          logStats(track, author, service);
+          logStats(track, author, service, likes);
         }
       } else {
         // Parse title from service
@@ -267,7 +273,7 @@ export default class Bot {
           const fuzzyResults = fuse.search(title);
           if (fuzzyResults.length) {
             tracks.push({ track: fuzzyResults[0].item, likes });
-            logStats(fuzzyResults[0].item, author, service);
+            logStats(fuzzyResults[0].item, author, service, likes);
           }
         }
       }
@@ -429,15 +435,26 @@ export default class Bot {
     }
 
     // Curators
+    const topCountCurators = contributions.sort((a, b) => b.count - a.count);
+    const topLikedCurators = topCountCurators
+      .filter(({ likes }) => likes > 0)
+      .sort((a, b) => b.likes - a.likes);
+    const hasLikes = topLikedCurators.length > 0;
+    const topCurators = hasLikes ? topLikedCurators : topCountCurators;
     message += '\n🏆 `Top Curators`\n\n';
-    contributions
-      .sort((a, b) => b.count - a.count)
-      .slice(0, NUMBER_OF_ITEMS)
-      .forEach((contribution) => {
-        message += `▪️ <@${contribution.author.id}> (${
-          contribution.count
-        } contribution${contribution.count === 1 ? '' : 's'})\n`;
-      });
+    topCurators.slice(0, NUMBER_OF_ITEMS).forEach((contribution) => {
+      message += `▪️ <@${contribution.author.id}> (`;
+      if (hasLikes) {
+        message += `${contribution.likes} vote${
+          contribution.likes === 1 ? '' : 's'
+        }`;
+      } else {
+        message += `${contribution.count} contribution${
+          contribution.count === 1 ? '' : 's'
+        }`;
+      }
+      message += `)\n`;
+    });
 
     // Final words
     message += `\nIn total, **${finalTracks.length} tracks** were added to the playlist.`;
