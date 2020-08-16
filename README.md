@@ -18,7 +18,7 @@ After each new playlist, a message is posted to a channel that will show the fol
 - Popular artists (with total tracks)
 - Dominant genres (with percentages)
 - Most liked tracks (with total like score)
-- Top contributors (with total contributions)
+- Top curators (with total votes/contributions)
 - Number of tracks & playlist link
 
 ## Reacting to Songs
@@ -26,6 +26,8 @@ After each new playlist, a message is posted to a channel that will show the fol
 If a song gets reacted with a 👍, this is counted as a **like**. The more likes a song gets, the higher it will appear in the playlist.
 
 If a song gets reacted with a 👎, this is counted as a **dislike**. This subtracts from the total number of likes. If a song is disliked enough, it will not appear in the playlist.
+
+If users are using the voting system, the "Top curators" section will be based off total number of votes. If there are none, or the total is equal to 0, then it will use total contributions instead. Users with 0 votes do not get shown.
 
 ## Installation
 
