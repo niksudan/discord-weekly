@@ -411,22 +411,22 @@ export default class Bot {
     console.log(`🎵  ${finalTracks.length} tracks found`, counts);
 
     // Reset and update playlist
-    // if (process.env.ENVIRONMENT !== 'development') {
-    console.log('🗑  Clearing playlist...');
-    await spotify.clearPlaylist();
-    console.log(`✏️  Renaming playlist to \"${playlistName}\"...`);
-    await spotify.renamePlaylist(playlistName);
-    console.log('➕  Adding tracks to playlist...');
-    await spotify.addTracksToPlaylist(
-      finalTracks.map(({ track }) => track.uri),
-    );
-    console.log(
-      '✨  Playlist updated successfully',
-      `https://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`,
-    );
-    // } else {
-    //   console.log('🛑  Playlist not saved (development mode)');
-    // }
+    if (process.env.ENVIRONMENT !== 'development') {
+      console.log('🗑  Clearing playlist...');
+      await spotify.clearPlaylist();
+      console.log(`✏️  Renaming playlist to \"${playlistName}\"...`);
+      await spotify.renamePlaylist(playlistName);
+      console.log('➕  Adding tracks to playlist...');
+      await spotify.addTracksToPlaylist(
+        finalTracks.map(({ track }) => track.uri),
+      );
+      console.log(
+        '✨  Playlist updated successfully',
+        `https://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`,
+      );
+    } else {
+      console.log('🛑  Playlist not saved (development mode)');
+    }
 
     // Send the news update
     const newsChannel = await this.findChannel(
