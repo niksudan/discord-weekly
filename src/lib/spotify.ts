@@ -2,6 +2,7 @@ import SpotifyWebApi from 'spotify-web-api-node';
 import * as fs from 'fs';
 import * as path from 'path';
 import { chunk } from 'lodash';
+import { sleep } from './sleep';
 
 require('dotenv').config();
 
@@ -101,7 +102,7 @@ export default class Spotify {
   }
 
   public async renamePlaylist(name: string) {
-    console.log(`✏️  Renaming playlist to \"${name}\"...`);
+    console.log(`⚙️  PUT /playlists/${process.env.PLAYLIST_ID}`);
     await this.client.changePlaylistDetails(process.env.PLAYLIST_ID, {
       name,
     });
@@ -112,17 +113,18 @@ export default class Spotify {
     const payloads = chunk(tracks, TRACKS_PER_PAYLOAD);
     for (let i = 0; i < payloads.length; i += 1) {
       console.log(
-        `➕  Adding tracks ${i * TRACKS_PER_PAYLOAD}-${
-          i * TRACKS_PER_PAYLOAD + TRACKS_PER_PAYLOAD
-        } to playlist...`,
+        `⚙️  POST /playlists/${process.env.PLAYLIST_ID}/tracks (${
+          i * TRACKS_PER_PAYLOAD
+        }-${i * TRACKS_PER_PAYLOAD + TRACKS_PER_PAYLOAD})`,
       );
       const payload = payloads[i];
+      await sleep(1000);
       await this.client.addTracksToPlaylist(process.env.PLAYLIST_ID, payload);
     }
   }
 
   public async clearPlaylist() {
-    console.log('🗑  Clearing playlist...');
+    console.log(`⚙️  GET /playlists/${process.env.PLAYLIST_ID}/tracks`);
     const response = await this.client.getPlaylistTracks(
       process.env.PLAYLIST_ID,
     );
@@ -132,22 +134,22 @@ export default class Spotify {
     }));
     const tracksToRemove = tracks.slice(0, 50);
 
+    console.log(
+      `⚙️  DELETE /playlists/${process.env.PLAYLIST_ID}/tracks (${tracksToRemove.length} items)`,
+    );
     await this.client.removeTracksFromPlaylist(
       process.env.PLAYLIST_ID,
       tracksToRemove,
     );
 
     if (tracksToRemove.length > 0) {
-      return new Promise((resolve) => {
-        setTimeout(async () => {
-          await this.clearPlaylist();
-          resolve();
-        }, 500);
-      });
+      await sleep(1000);
+      await this.clearPlaylist();
     }
   }
 
   public async getTrack(id: string): Promise<SpotifyTrack> {
+    console.log(`⚙️  GET /tracks/${id}`);
     const response = await this.client.getTrack(id);
     return {
       uri: response.body.uri,
@@ -157,8 +159,19 @@ export default class Spotify {
     };
   }
 
+  public async getTracks(ids: string[]): Promise<SpotifyTrack[]> {
+    console.log(`⚙️  GET /tracks?ids=${ids}`);
+    const response = await this.client.getTracks(ids);
+    return response.body.tracks.map((item) => ({
+      uri: item.uri,
+      name: item.name,
+      popularity: item.popularity,
+      artists: item.artists.map(({ id, name }) => ({ id, name })),
+    }));
+  }
+
   public async searchTracks(query: string, limit = 5): Promise<SpotifyTrack[]> {
-    console.log(`🔍  Searching Spotify for "${query}"...`);
+    console.log(`⚙️  GET /search?q=${query}&limit=${limit}`);
     const response = await this.client.searchTracks(query, { limit });
     return response.body.tracks.items.map((item) => ({
       uri: item.uri,
@@ -169,6 +182,7 @@ export default class Spotify {
   }
 
   public async getArtists(ids: string[]): Promise<SpotifyArtist[]> {
+    console.log(`⚙️  GET /artists?ids=${ids}`);
     const response = await this.client.getArtists(ids);
     return response.body.artists
       .filter((item) => !!item)

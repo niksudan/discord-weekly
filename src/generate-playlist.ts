@@ -2,6 +2,7 @@ import Bot from './lib/bot';
 import Server from './lib/server';
 import Spotify from './lib/spotify';
 import * as Sentry from '@sentry/node';
+import { sleep } from './lib/sleep';
 
 require('dotenv').config();
 
@@ -10,13 +11,15 @@ if (process.env.SENTRY_DSN) {
 }
 
 (async () => {
-  // Abort the playlist generation if we take longer than 2 minutes
+  // Abort the playlist generation if we take longer than 5 minutes
   setTimeout(() => {
     console.log('⚠️  Took too long, exiting');
     process.exit(1);
-  }, 1000 * 120);
+  }, 1000 * 60 * 4);
 
   try {
+    const startTime = new Date();
+
     // Start a new Spotify authentication server
     const spotify = new Spotify();
     new Server(spotify);
@@ -34,6 +37,11 @@ if (process.env.SENTRY_DSN) {
 
     // Generate a playlist
     await bot.generatePlaylist(spotify, 1);
+
+    // Benchmarks
+    const endTime = new Date();
+    const timeTaken = endTime.valueOf() - startTime.valueOf();
+    console.log(`Took ${(timeTaken / 1000 / 60).toFixed(2)} minutes`);
 
     process.exit(0);
   } catch (e) {

@@ -15,6 +15,7 @@ import Spotify, { SpotifyTrack } from './spotify';
 import YouTube from './youtube';
 import AppleMusic from './apple';
 import SoundCloud from './soundcloud';
+import { sleep } from './sleep';
 
 require('dotenv').config();
 
@@ -32,6 +33,7 @@ interface TrackData {
   service: Service;
   author: User;
   likes: number;
+  timestamp: number;
 }
 
 interface Service {
@@ -142,7 +144,12 @@ export default class Bot {
   private async parseTrackData(messages: Messages) {
     let trackData: TrackData[] = [];
 
-    for (let { content, author, reactions } of messages.values()) {
+    for (let {
+      content,
+      author,
+      reactions,
+      createdTimestamp,
+    } of messages.values()) {
       let match: RegExpMatchArray;
       for (let service of services) {
         match = service.match(content);
@@ -151,6 +158,11 @@ export default class Bot {
           let dislikes = 0;
 
           // Determine number of accurate likes/dislikes (do not count bots/authors)
+          console.log(
+            `👍  Fetching votes... (${
+              (trackData.length / messages.size) * 100
+            }%)`,
+          );
           const likeData = reactions.cache.get('👍');
           if (likeData) {
             likes = (await likeData.users.fetch()).filter(
@@ -172,6 +184,7 @@ export default class Bot {
                 service,
                 author,
                 likes: likes - dislikes,
+                timestamp: createdTimestamp,
               })),
             );
           }
@@ -186,7 +199,11 @@ export default class Bot {
    * Convert track data into Spotify URIs
    */
   public async convertTrackData(spotify: Spotify, trackData: TrackData[]) {
-    const tracks: { track: SpotifyTrack; likes: number }[] = [];
+    const tracks: {
+      track: SpotifyTrack;
+      likes: number;
+      timestamp: number;
+    }[] = [];
     const contributions: { author: User; count: number; likes: number }[] = [];
     const artists: ArtistData[] = [];
     const counts: Record<ServiceType, number> = {
@@ -227,56 +244,82 @@ export default class Bot {
       }
     };
 
-    for (let { author, service, url, likes } of trackData) {
-      // Add Spotify track directly
-      if (service.type === 'spotify') {
-        const track = await spotify.getTrack(
+    // Bulk-fetch direct Spotify tracks
+    for (let trackChunk of chunk(
+      trackData.filter(({ service }) => service.type === 'spotify'),
+      50,
+    )) {
+      console.log(
+        `🔍  Fetching Spotify data... (${
+          (tracks.length / trackData.length) * 100
+        }%)`,
+      );
+      const spotifyTracks = await spotify.getTracks(
+        trackChunk.map(({ url }) =>
           url.replace(/https:\/\/open.spotify.com\/track\//gi, ''),
-        );
+        ),
+      );
+      for (let index in spotifyTracks) {
+        const track = spotifyTracks[index];
         if (track) {
-          tracks.push({ track, likes });
+          const { author, likes, service, timestamp } = trackChunk[index];
           logStats(track, author, service, likes);
-        }
-      } else {
-        // Parse title from service
-        const title = await service.get(url);
-
-        // Search for track on Spotify
-        let searchQuery = title;
-        if (service.type === 'youtube') {
-          searchQuery = title
-            .replace(/ *\([^)]*\) */g, '')
-            .replace(/[^A-Za-z0-9 ]/g, '')
-            .replace(/\s{2,}/g, ' ');
-        }
-
-        if (searchQuery.length >= 3) {
-          const fuse = new Fuse(await spotify.searchTracks(searchQuery), {
-            threshold: 0.8,
-            keys: [
-              {
-                name: 'title',
-                weight: 0.7,
-              },
-              {
-                name: 'artists.name',
-                weight: 0.5,
-              },
-              {
-                name: 'album',
-                weight: 0.1,
-              },
-            ],
+          tracks.push({
+            track,
+            likes,
+            timestamp,
           });
-
-          // Find the best match
-          const fuzzyResults = fuse.search(title);
-          if (fuzzyResults.length) {
-            tracks.push({ track: fuzzyResults[0].item, likes });
-            logStats(fuzzyResults[0].item, author, service, likes);
-          }
         }
       }
+      await sleep(1000);
+    }
+
+    // Search Spotify for the rest
+    for (let { author, service, url, likes, timestamp } of trackData.filter(
+      ({ service }) => service.type !== 'spotify',
+    )) {
+      const title = await service.get(url);
+
+      let searchQuery = title;
+      if (service.type === 'youtube') {
+        searchQuery = title
+          .replace(/ *\([^)]*\) */g, '')
+          .replace(/[^A-Za-z0-9 ]/g, '')
+          .replace(/\s{2,}/g, ' ');
+      }
+
+      if (searchQuery.length >= 3) {
+        console.log(
+          `🔍  Searching Spotify for "${searchQuery}"... (${
+            (tracks.length / trackData.length) * 100
+          }%)`,
+        );
+        const fuse = new Fuse(await spotify.searchTracks(searchQuery), {
+          threshold: 0.8,
+          keys: [
+            {
+              name: 'title',
+              weight: 0.7,
+            },
+            {
+              name: 'artists.name',
+              weight: 0.5,
+            },
+            {
+              name: 'album',
+              weight: 0.1,
+            },
+          ],
+        });
+
+        // Find the best match
+        const fuzzyResults = fuse.search(title);
+        if (fuzzyResults.length) {
+          tracks.push({ track: fuzzyResults[0].item, likes, timestamp });
+          logStats(fuzzyResults[0].item, author, service, likes);
+        }
+      }
+      await sleep(1000);
     }
 
     return { tracks, counts, contributions, artists };
@@ -362,23 +405,28 @@ export default class Bot {
 
     // Determine genres from artist pages if possible
     const genres = await this.fetchGenres(spotify, artists);
-    const finalTracks = uniq(orderBy(tracks, 'likes').reverse());
+    const finalTracks = uniq(
+      orderBy(orderBy(tracks, 'timestamp'), 'likes').reverse(),
+    );
     console.log(`🎵  ${finalTracks.length} tracks found`, counts);
 
     // Reset and update playlist
-    if (process.env.ENVIRONMENT !== 'development') {
-      await spotify.clearPlaylist();
-      await spotify.renamePlaylist(playlistName);
-      await spotify.addTracksToPlaylist(
-        finalTracks.map(({ track }) => track.uri),
-      );
-      console.log(
-        '✨  Playlist updated successfully',
-        `https://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`,
-      );
-    } else {
-      console.log('🛑  Playlist not saved (development mode)');
-    }
+    // if (process.env.ENVIRONMENT !== 'development') {
+    console.log('🗑  Clearing playlist...');
+    await spotify.clearPlaylist();
+    console.log(`✏️  Renaming playlist to \"${playlistName}\"...`);
+    await spotify.renamePlaylist(playlistName);
+    console.log('➕  Adding tracks to playlist...');
+    await spotify.addTracksToPlaylist(
+      finalTracks.map(({ track }) => track.uri),
+    );
+    console.log(
+      '✨  Playlist updated successfully',
+      `https://open.spotify.com/playlist/${process.env.PLAYLIST_ID}`,
+    );
+    // } else {
+    //   console.log('🛑  Playlist not saved (development mode)');
+    // }
 
     // Send the news update
     const newsChannel = await this.findChannel(
