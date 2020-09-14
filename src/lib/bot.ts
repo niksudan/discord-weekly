@@ -20,7 +20,7 @@ import { sleep } from './sleep';
 require('dotenv').config();
 
 const LIKE_THRESHOLD = 2;
-const DISLIKE_THRESHOLD = -2;
+const DISLIKE_THRESHOLD = -1;
 const ARTISTS_THRESHOLD = 2;
 const NUMBER_OF_ITEMS = 5;
 
