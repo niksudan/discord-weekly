@@ -12,7 +12,7 @@ export default class YouTube {
   public static async get(url: string): Promise<string> {
     const id = getYouTubeID(url);
     if (!id) {
-      return;
+      return '';
     }
 
     try {
