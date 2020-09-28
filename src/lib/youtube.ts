@@ -21,6 +21,9 @@ export default class YouTube {
       ).then((res) => res.text());
       const query = queryString.parse(response);
       const { videoDetails } = JSON.parse(query.player_response.toString());
+      if (!videoDetails) {
+        return '';
+      }
       return videoDetails.title;
     } catch (e) {
       console.log('Error with YouTube:', e.message);
