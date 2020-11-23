@@ -473,7 +473,7 @@ export default class Bot {
     const popularTracks = finalTracks.filter(
       ({ likes }) => likes >= LIKE_THRESHOLD,
     );
-    if (popularTracks.length > 0 && !process.env.DISABLE_VOTING) {
+    if (popularTracks.length > 0 && process.env.DISABLE_VOTING !== 'true') {
       message += '\n💽 `Most Liked Tracks`\n\n';
       popularTracks.slice(0, NUMBER_OF_ITEMS).forEach(({ track, likes }) => {
         message += `▪️ ${track.artists.map(({ name }) => name).join(', ')} - ${
@@ -487,7 +487,8 @@ export default class Bot {
     const topLikedCurators = topCountCurators
       .filter(({ likes }) => likes > 0)
       .sort((a, b) => b.likes - a.likes);
-    const hasLikes = topLikedCurators.length > 0 && !process.env.DISABLE_VOTING;
+    const hasLikes =
+      topLikedCurators.length > 0 && process.env.DISABLE_VOTING !== 'true';
     const topCurators = hasLikes ? topLikedCurators : topCountCurators;
     message += '\n🏆 `Top Curators`\n\n';
     topCurators.slice(0, NUMBER_OF_ITEMS).forEach((contribution) => {
