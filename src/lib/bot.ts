@@ -280,6 +280,10 @@ export default class Bot {
     )) {
       const title = await service.get(url);
 
+      if (!title) {
+        continue;
+      }
+
       let searchQuery = title;
       if (service.type === 'youtube') {
         searchQuery = title
