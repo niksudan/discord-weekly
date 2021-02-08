@@ -11,11 +11,11 @@ if (process.env.SENTRY_DSN) {
 }
 
 (async () => {
-  // Abort the playlist generation if we take longer than 5 minutes
+  // Abort the playlist generation if we take longer than 10 minutes
   setTimeout(() => {
     console.log('⚠️  Took too long, exiting');
     process.exit(1);
-  }, 1000 * 60 * 4);
+  }, 1000 * 60 * 10);
 
   try {
     const startTime = new Date();
