@@ -2,12 +2,26 @@ import Bot from './lib/bot';
 import Server from './lib/server';
 import Spotify from './lib/spotify';
 import * as Sentry from '@sentry/node';
-import { sleep } from './lib/sleep';
+import * as Tracing from '@sentry/tracing';
 
 require('dotenv').config();
 
+let transaction = undefined;
+
 if (process.env.SENTRY_DSN) {
-  Sentry.init({ dsn: process.env.SENTRY_DSN });
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    tracesSampleRate: 1.0,
+  });
+
+  transaction = Sentry.startTransaction({
+    op: 'generate-playlist',
+    name: `${process.env.PLAYLIST_NAME} (${new Date().toString()})`,
+  });
+
+  Sentry.configureScope((scope) => {
+    scope.setSpan(transaction);
+  });
 }
 
 (async () => {
@@ -42,6 +56,7 @@ if (process.env.SENTRY_DSN) {
     const endTime = new Date();
     const timeTaken = endTime.valueOf() - startTime.valueOf();
     console.log(`Took ${(timeTaken / 1000 / 60).toFixed(2)} minutes`);
+    transaction?.finish();
 
     process.exit(0);
   } catch (e) {

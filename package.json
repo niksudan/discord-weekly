@@ -4,7 +4,8 @@
   "author": "Nik Sudan",
   "license": "MIT",
   "dependencies": {
-    "@sentry/node": "5.15.5",
+    "@sentry/node": "^6.3.5",
+    "@sentry/tracing": "^6.3.5",
     "body-parser": "^1.19.0",
     "cheerio": "^1.0.0-rc.3",
     "discord.js": "^12.2.0",
