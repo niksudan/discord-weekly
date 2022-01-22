@@ -15,7 +15,7 @@
     "get-youtube-id": "^1.0.1",
     "lodash": "^4.17.21",
     "moment": "^2.24.0",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^3.1.1",
     "query-string": "^6.8.3",
     "spotify-web-api-node": "^4.0.0",
     "typescript": "^3.9.5"
